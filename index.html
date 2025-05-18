@@ -1,11 +1,82 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Pokémon TCG</title>
 </head>
-<body>
-  
+
+<body class="min-h-screen bg-gradient-to-br from-yellow-200 to-blue-300 font-sans text-gray-800">
+
+  <!-- Header -->
+  <header class="flex items-center justify-center py-6">
+    <img src="img/Pokémon_Trading_Card_Game_logo.svg.png" alt="Logo Pokémon" class="h-20 object-contain">
+  </header>
+
+  <!-- Bouton jouer -->
+  <div class="text-center my-8">
+    <button onclick="startGame()"
+      class="bg-red-500 hover:bg-red-600 text-white text-lg font-bold py-3 px-6 rounded-full shadow-lg transition duration-300">
+      🎮 Jouer
+    </button>
+  </div>
+
+  <!-- Plateau de jeu -->
+  <div id="game-area" class="hidden flex flex-col gap-12 px-8 py-6 items-center">
+
+    <!-- Ligne Adversaire -->
+    <div class="flex justify-between items-center">
+      <!-- Main adverse -->
+      <div>
+        <h2 class="font-bold mb-2 text-center">Main de l’adversaire</h2>
+        <div id="opponent-hand" class="flex space-x-2 bg-white p-3 rounded-lg shadow border min-h-[120px]">
+          <!-- Cartes dos vers toi -->
+        </div>
+      </div>
+
+      <!-- Pioche adverse -->
+      <div class="flex flex-col items-center">
+        <h2 class="font-bold mb-1">Pioche adverse</h2>
+        <div id="opponent-deck" class="flex flex-col items-center space-y-2">
+          <!-- Injectée en JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Zone de combat -->
+    <div class="w-full flex justify-center">
+      <div class="w-3/4 h-40 border-4 border-dashed border-gray-500 rounded-lg bg-white flex items-center justify-center text-xl font-semibold text-gray-600">
+        ⚔️ Zone de Combat
+      </div>
+    </div>
+
+    <!-- Ligne Joueur -->
+    <div class="flex justify-between items-center">
+      <!-- Ta main -->
+      <div>
+        <h2 class="font-bold mb-2 text-center">Ta main</h2>
+        <div id="hand"
+          class="flex space-x-2 bg-white p-3 rounded-lg shadow border min-h-[120px]"
+          ondrop="drop_handler(event)" ondragover="dragover_handler(event)">
+        </div>
+      </div>
+
+      <!-- Ta pioche -->
+      <div class="flex flex-col items-center">
+        <h2 class="font-bold mb-1">Ta Pioche</h2>
+        <div id="deck" class="flex flex-col items-center space-y-2">
+          <!-- Injectée en JS -->
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Script JS -->
+  <script src="js/main.js"></script>
+
 </body>
+
 </html>
