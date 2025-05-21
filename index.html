@@ -2,8 +2,8 @@
 <html lang="fr">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
   <title>Pokémon TCG</title>
 </head>
@@ -12,12 +12,13 @@
 
   <!-- Header -->
   <header class="flex items-center justify-center py-6">
-    <img src="img/Pokémon_Trading_Card_Game_logo.svg.png" alt="Logo Pokémon" class="h-20 object-contain">
+    <img src="img/Pokémon_Trading_Card_Game_logo.svg.png" alt="Logo Pokémon Trading Card Game"
+      class="h-20 object-contain" />
   </header>
 
   <!-- Bouton jouer -->
   <div class="text-center my-8">
-    <button onclick="startGame()"
+    <button id="start-btn"
       class="bg-red-500 hover:bg-red-600 text-white text-lg font-bold py-3 px-6 rounded-full shadow-lg transition duration-300">
       🎮 Jouer
     </button>
@@ -27,10 +28,10 @@
   <div id="game-area" class="hidden flex flex-col gap-12 px-8 py-6 items-center">
 
     <!-- Ligne Adversaire -->
-    <div class="flex justify-between items-center">
+    <div class="flex justify-between items-center w-full max-w-6xl">
       <!-- Main adverse -->
       <div>
-        <h2 class="font-bold mb-2 text-center">Main de l’adversaire</h2>
+        <h2 class="font-bold mb-2 text-center">Main de l'adversaire</h2>
         <div id="opponent-hand" class="flex space-x-2 bg-white p-3 rounded-lg shadow border min-h-[120px]">
           <!-- Cartes dos vers toi -->
         </div>
@@ -47,19 +48,19 @@
 
     <!-- Zone de combat -->
     <div class="w-full flex justify-center">
-      <div class="w-3/4 h-40 border-4 border-dashed border-gray-500 rounded-lg bg-white flex items-center justify-center text-xl font-semibold text-gray-600">
+      <div
+        class="w-3/4 h-40 border-4 border-dashed border-gray-500 rounded-lg bg-white flex items-center justify-center text-xl font-semibold text-gray-600">
         ⚔️ Zone de Combat
       </div>
     </div>
 
     <!-- Ligne Joueur -->
-    <div class="flex justify-between items-center">
+    <div class="flex justify-between items-center w-full max-w-6xl">
       <!-- Ta main -->
       <div>
         <h2 class="font-bold mb-2 text-center">Ta main</h2>
-        <div id="hand"
-          class="flex space-x-2 bg-white p-3 rounded-lg shadow border min-h-[120px]"
-          ondrop="drop_handler(event)" ondragover="dragover_handler(event)">
+        <div id="hand" class="flex space-x-2 bg-white p-3 rounded-lg shadow border min-h-[120px]">
+          <!-- Cartes visibles -->
         </div>
       </div>
 
@@ -75,7 +76,17 @@
   </div>
 
   <!-- Script JS -->
-  <script src="js/main.js"></script>
+  <script src="js/main.js" type="module"></script>
+  <script src="js/game.js" type="module"></script>
+  <script>
+    // Attacher les événements ici si besoin
+    document.getElementById('start-btn').addEventListener('click', () => {
+      document.getElementById('game-area').classList.remove('hidden');
+      document.getElementById('start-btn').style.display = 'none';
+    });
+
+
+  </script>
 
 </body>
 
