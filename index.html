@@ -12,20 +12,13 @@
 
   <!-- Header -->
   <header class="flex items-center justify-center py-6">
-    <img src="img/Pokémon_Trading_Card_Game_logo.svg.png" alt="Logo Pokémon Trading Card Game"
-      class="h-20 object-contain" />
+    <img src="img/logo.png" alt="Logo Pokémon Trading Card Game" class="h-20 object-contain" />
   </header>
 
-  <!-- Bouton jouer -->
-  <div class="text-center my-8">
-    <button id="start-btn"
-      class="bg-red-500 hover:bg-red-600 text-white text-lg font-bold py-3 px-6 rounded-full shadow-lg transition duration-300">
-      🎮 Jouer
-    </button>
-  </div>
+
 
   <!-- Plateau de jeu -->
-  <div id="game-area" class="hidden flex flex-col gap-12 px-8 py-6 items-center">
+  <div id="game-area" class="flex flex-col gap-12 px-8 py-6 items-center">
 
     <!-- Ligne Adversaire -->
     <div class="flex justify-between items-center w-full max-w-6xl">
@@ -47,19 +40,41 @@
     </div>
 
     <!-- Zone de combat -->
-    <div class="w-full flex justify-center">
-      <div
-        class="w-3/4 h-40 border-4 border-dashed border-gray-500 rounded-lg bg-white flex items-center justify-center text-xl font-semibold text-gray-600">
-        ⚔️ Zone de Combat
+    <div id="battle-zone" class="w-full flex  justify-around items-center border-t border-b py-6">
+      <div class="text-center">
+        <h3 class="font-bold mb-2">Adversaire</h3>
+
+        <div id="opponent-active" class="min-h-[200px] w-[150px] border-2 border-dashed border-gray-400 rounded-lg flex items-center justify-center">
+
+        </div>
+
+        <p id="opponent-hp" class="font-mono text-sm mt-1"></p>
+      </div>
+
+      <div id="results">
+
+      </div>
+
+      <div class="text-center">
+        <h3 class="font-bold mb-2">Toi</h3>
+
+        <div id="player-active" class="min-h-[200px] w-[150px] border-2 border-dashed border-gray-400 rounded-lg flex items-center justify-center">
+
+        </div>
+
+        <p id="player-hp" class="font-mono text-sm mt-1"></p>
+        <div id="attack-buttons" class="flex flex-wrap justify-center mt-3 gap-2"></div>
       </div>
     </div>
+
+
 
     <!-- Ligne Joueur -->
     <div class="flex justify-between items-center w-full max-w-6xl">
       <!-- Ta main -->
       <div>
         <h2 class="font-bold mb-2 text-center">Ta main</h2>
-        <div id="hand" class="flex space-x-2 bg-white p-3 rounded-lg shadow border min-h-[120px]">
+        <div id="hand" class="flex space-x-2 bg-white p-3 rounded-lg shadow border min-h-[150px]">
           <!-- Cartes visibles -->
         </div>
       </div>
@@ -75,15 +90,31 @@
 
   </div>
 
+  <div id="card-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg max-w-2xl w-full mx-4">
+      <div class="flex justify-between items-start mb-4">
+        <h2 id="modal-title" class="text-xl font-bold"></h2>
+        <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="flex flex-col md:flex-row gap-6">
+        <img id="modal-img" class="w-72 h-auto rounded-lg" src="" alt="Carte Pokémon">
+        <div class="space-y-4">
+          <div id="modal-info" class="space-y-2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
   <!-- Script JS -->
   <script src="js/main.js" type="module"></script>
   <script src="js/game.js" type="module"></script>
   <script>
-    // Attacher les événements ici si besoin
-    document.getElementById('start-btn').addEventListener('click', () => {
-      document.getElementById('game-area').classList.remove('hidden');
-      document.getElementById('start-btn').style.display = 'none';
-    });
+
 
 
   </script>
