@@ -16,6 +16,81 @@ export class Game {
       this.closeModalBtn = document.getElementById("close-modal");
       this.maxHandSize = maxHandSize;
       this.setupModal();
+      this.drawCooldown = 5 * 60; // 5 minutes en secondes
+      this.timeLeft = 0;
+      this.drawTimerElement = document.getElementById("draw-timer");
+      this.canDraw = true;  // Indique si on peut tirer une carte
+      this.drawTimerId = null;
+
+   }
+
+
+
+   updateTimerDisplay() {
+      const minutes = Math.floor(this.timeLeft / 60).toString().padStart(2, '0');
+      const seconds = (this.timeLeft % 60).toString().padStart(2, '0');
+      this.drawTimerElement.textContent = `Prochain tirage dans : ${minutes}:${seconds}`;
+   }
+
+   // Nouvelle méthode à ajouter dans ta classe Game :
+   attemptDrawCard() {
+      if (!this.canDraw) {
+         alert("Attends que le timer expire pour tirer une nouvelle carte !");
+         return null;
+      }
+
+      if (this.player.hand.cards.length >= this.maxHandSize) {
+         alert("Ta main est pleine !");
+         return null;
+      }
+
+      if (this.player.deck.length === 0) {
+         alert("Ta pioche est vide !");
+         return null;
+      }
+
+      // Autoriser le tirage
+      this.canDraw = false;
+      const card = this.player.deck.shift();
+      this.player.hand.cards.push(card);
+
+      // Démarrer le timer de 5 minutes (300000 ms)
+      this.startDrawTimer();
+
+      return card;
+   }
+
+   startDrawTimer() {
+      const timerDisplay = document.getElementById("timer-display");
+      let remainingTime = 300; // secondes
+
+      // Affiche le timer dès le début
+      if (timerDisplay) {
+         timerDisplay.textContent = `Prochaine carte dans: 5:00`;
+      }
+
+      // Nettoie un éventuel timer précédent
+      if (this.drawTimerId) {
+         clearInterval(this.drawTimerId);
+      }
+
+      this.drawTimerId = setInterval(() => {
+         remainingTime--;
+
+         if (timerDisplay) {
+            const minutes = Math.floor(remainingTime / 60);
+            const seconds = remainingTime % 60;
+            timerDisplay.textContent = `Prochaine carte dans: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+         }
+
+         if (remainingTime <= 0) {
+            clearInterval(this.drawTimerId);
+            this.canDraw = true;
+            if (timerDisplay) {
+               timerDisplay.textContent = "Tu peux tirer une carte !";
+            }
+         }
+      }, 1000);
    }
 
 
@@ -123,6 +198,8 @@ export class Game {
 
 
    renderOpponentCards() {
+      this.renderDeck(this.opponentDeckContainer, this.opponent.deck, (ev) => this.dragstart_handler(ev));
+
       this.opponentHandContainer.innerHTML = "";
       // Utilise la longueur réelle de la main de l'adversaire au lieu de maxHandSize
       const opponentHandSize = this.opponent.hand.cards.length;
@@ -180,11 +257,9 @@ export class Game {
       console.log("Drop event:", { data, targetId }); // Debug
 
       if (data === "deck-card") {
-         if (this.player.hand.cards.length < this.maxHandSize && this.player.deck.length > 0) {
-            this.player.drawCard();
+         const card = this.attemptDrawCard();
+         if (card) {
             this.renderCards();
-         } else {
-            alert("Ta main est pleine ou ta pioche est vide !");
          }
       } else if (data.startsWith("hand-card-")) {
          const index = parseInt(data.split("-")[2]);
@@ -199,21 +274,23 @@ export class Game {
          if (!card) {
             console.error("Carte non trouvée à l'index:", index);
             return;
-         } if (targetId === "player-active") {
+         }
+
+         if (targetId === "player-active") {
             if (!this.player.activeCard) {
                console.log("Déplacement de la carte vers la zone active"); // Debug
                this.player.activeCard = this.player.hand.cards.splice(index, 1)[0];
                this.renderActiveCard(this.playerActive, this.player.activeCard);
+
                // L'adversaire joue automatiquement une carte
                if (!this.opponent.activeCard && this.opponent.hand.cards.length > 0) {
-                  // Choisit une carte aléatoire de la main de l'adversaire
                   const randomIndex = Math.floor(Math.random() * this.opponent.hand.cards.length);
                   this.opponent.activeCard = this.opponent.hand.cards.splice(randomIndex, 1)[0];
                   this.renderActiveCard(this.opponentActive, this.opponent.activeCard);
-                  this.renderOpponentCards(); // Met à jour spécifiquement la main de l'adversaire
+                  this.renderOpponentCards();
                }
 
-               this.renderCards(); // Met à jour le reste de l'interface
+               this.renderCards();
                if (this.opponent.activeCard) {
                   this.displayResults();
                }
@@ -291,6 +368,7 @@ export class Game {
 
 
    startGame() {
+      this.startDrawTimer();
       [this.player, this.opponent].forEach(player => this.drawInitialCards(player));
       this.addDropListeners(this.playerActive, this.opponentActive, this.handContainer);
       this.renderCards();
