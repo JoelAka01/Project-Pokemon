@@ -16,12 +16,15 @@ export class Card {
       }));
    }
 
-   static async fetchCards(type = "fire", pageSize = 10) {
+   static async fetchCards({ type = "fire", subtype = "Basic", pageSize = 10 } = {}) {
       const API_KEY = '420c0510-611c-464f-bf5b-b39949f54466';
+
+      const query = [`types:${type}`];
+      if (subtype) query.push(`subtypes:${subtype}`);
 
       try {
          const response = await fetch(
-            `https://api.pokemontcg.io/v2/cards?q=types:${type}&pageSize=${pageSize}`,
+            `https://api.pokemontcg.io/v2/cards?q=${query.join(" ")}&pageSize=${pageSize}`,
             { headers: { 'X-Api-Key': API_KEY } }
          );
 
@@ -46,6 +49,7 @@ export class Card {
          return [];
       }
    }
+
 
    // Méthode pour afficher les informations de la carte
    getInfo() {

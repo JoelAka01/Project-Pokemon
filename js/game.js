@@ -52,10 +52,8 @@ export class Game {
       const modalTitle = document.getElementById("modal-title");
       const modalImg = document.getElementById("modal-img");
       const modalInfo = document.getElementById("modal-info");
-
       modalTitle.textContent = card.name;
       modalImg.src = card.imageUrl;
-
       let infoHTML = `
          <p class="text-lg"><span class="font-bold">HP:</span> ${card.hp}</p>
          <p class="text-lg"><span class="font-bold">Types:</span> ${card.types.join(", ")}</p>
@@ -88,10 +86,6 @@ export class Game {
    }
 
 
-
-
-
-
    renderDeck(container, deck, dragHandler = null) {
       container.innerHTML = "";
       const cardBack = document.createElement("img");
@@ -101,7 +95,6 @@ export class Game {
       cardBack.id = "deck-card";
       cardBack.setAttribute("draggable", "true");
       cardBack.addEventListener("dragstart", dragHandler);
-
       container.appendChild(cardBack);
       const label = document.createElement("p");
       label.textContent = `${deck.length} carte(s)`;
@@ -110,8 +103,7 @@ export class Game {
    }
 
 
-
-   renderCards() {
+   renderPlayerCards() {
       this.renderDeck(this.deckContainer, this.player.deck, (ev) => this.dragstart_handler(ev));
       this.handContainer.innerHTML = "";
       this.player.hand.cards.forEach((cardObj, index) => {
@@ -125,33 +117,34 @@ export class Game {
          card.addEventListener("dragstart", (ev) => {
             ev.dataTransfer.setData("text/plain", `hand-card-${index}`);
          });
-
          this.handContainer.appendChild(card);
       });
+   }
 
-      this.renderDeck(this.opponentDeckContainer, this.opponent.deck);
+
+   renderOpponentCards() {
       this.opponentHandContainer.innerHTML = "";
-      this.opponent.hand.cards.forEach(() => {
-         const backCard = document.createElement("img");
-         backCard.src = this.cardBackUrl;
-         backCard.alt = "Dos de carte";
-         backCard.className = "w-40 h-auto rounded shadow";
-         this.opponentHandContainer.appendChild(backCard);
-      });
+      // Utilise la longueur réelle de la main de l'adversaire au lieu de maxHandSize
+      const opponentHandSize = this.opponent.hand.cards.length;
+
+      for (let i = 0; i < opponentHandSize; i++) {
+         const card = document.createElement("img");
+         card.src = "../img/back-card.jpg"; // URL de l'image du dos de la carte
+         card.alt = "Dos de carte Pokémon";
+         card.className = "w-40 h-auto rounded-lg shadow";
+         card.id = `opponent-hand-card-${i}`;
+         this.opponentHandContainer.appendChild(card);
+      }
    }
 
 
-   renderPlayerActive() {
-      this.playerActive.innerHTML = "";
-
-      const card = this.player.activeCard;
-
-
+   renderActiveCard(container, card) {
+      container.innerHTML = "";
       if (!card) {
          const placeholder = document.createElement("p");
          placeholder.textContent = "Déposez une carte ici pour l'activer";
          placeholder.className = "text-center text-gray-500";
-         this.playerActive.appendChild(placeholder);
+         container.appendChild(placeholder);
          return;
       }
       const cardImg = document.createElement("img");
@@ -159,33 +152,9 @@ export class Game {
       cardImg.alt = card.name;
       cardImg.className = "w-full h-auto rounded-lg shadow";
       cardImg.addEventListener("click", () => this.showCardModal(card));
-      const info = document.createElement("div");
-      this.playerActive.appendChild(cardImg);
-      this.playerActive.appendChild(info);
+      container.appendChild(cardImg);
    }
 
-
-   renderOpponentActive() {
-      this.opponentActive.innerHTML = "";
-      const card = this.opponent.activeCard;
-
-      if (!card) {
-         const placeholder = document.createElement("p");
-         placeholder.textContent = "Déposez une carte ici pour l'activer";
-         placeholder.className = "text-center text-gray-500";
-         this.opponentActive.appendChild(placeholder);
-         return;
-      }
-
-      const cardImg = document.createElement("img");
-      cardImg.src = card.imageUrl;
-      cardImg.alt = card.name;
-      cardImg.className = "w-full h-auto rounded-lg shadow";
-      cardImg.addEventListener("click", () => this.showCardModal(card));
-      const info = document.createElement("div");
-      this.opponentActive.appendChild(cardImg);
-      this.opponentActive.appendChild(info);
-   }
 
 
 
@@ -204,12 +173,11 @@ export class Game {
    }
 
 
-
-
    drop_handler(ev) {
       ev.preventDefault();
       const data = ev.dataTransfer.getData("text/plain");
       const targetId = ev.currentTarget.id;
+      console.log("Drop event:", { data, targetId }); // Debug
 
       if (data === "deck-card") {
          if (this.player.hand.cards.length < this.maxHandSize && this.player.deck.length > 0) {
@@ -218,32 +186,48 @@ export class Game {
          } else {
             alert("Ta main est pleine ou ta pioche est vide !");
          }
-
       } else if (data.startsWith("hand-card-")) {
          const index = parseInt(data.split("-")[2]);
+         console.log("Card index:", index); // Debug
+
+         if (index < 0 || index >= this.player.hand.cards.length) {
+            console.error("Index de carte invalide:", index);
+            return;
+         }
 
          const card = this.player.hand.cards[index];
-         if (!card) return;
-
-         if (targetId === "player-active") {
+         if (!card) {
+            console.error("Carte non trouvée à l'index:", index);
+            return;
+         } if (targetId === "player-active") {
             if (!this.player.activeCard) {
+               console.log("Déplacement de la carte vers la zone active"); // Debug
                this.player.activeCard = this.player.hand.cards.splice(index, 1)[0];
-               this.renderCards();
-               this.renderPlayerActive();
-               this.displayResults();
+               this.renderActiveCard(this.playerActive, this.player.activeCard);
+               // L'adversaire joue automatiquement une carte
+               if (!this.opponent.activeCard && this.opponent.hand.cards.length > 0) {
+                  // Choisit une carte aléatoire de la main de l'adversaire
+                  const randomIndex = Math.floor(Math.random() * this.opponent.hand.cards.length);
+                  this.opponent.activeCard = this.opponent.hand.cards.splice(randomIndex, 1)[0];
+                  this.renderActiveCard(this.opponentActive, this.opponent.activeCard);
+                  this.renderOpponentCards(); // Met à jour spécifiquement la main de l'adversaire
+               }
 
+               this.renderCards(); // Met à jour le reste de l'interface
+               if (this.opponent.activeCard) {
+                  this.displayResults();
+               }
             } else {
                alert("Tu as déjà un Pokémon actif !");
             }
-         }
-
-         else if (targetId === "opponent-active") {
+         } else if (targetId === "opponent-active") {
             if (!this.opponent.activeCard) {
                this.opponent.activeCard = this.player.hand.cards.splice(index, 1)[0];
+               this.renderActiveCard(this.opponentActive, this.opponent.activeCard);
                this.renderCards();
-               this.renderOpponentActive();
-               this.displayResults();
-
+               if (this.player.activeCard) {
+                  this.displayResults();
+               }
             } else {
                alert("L'adversaire a déjà un Pokémon actif !");
             }
@@ -270,9 +254,9 @@ export class Game {
       const playerCurrentHp = playerCard.hp - opponentCard.attacks[0].damage;
       const opponentCurrentHp = opponentCard.hp - playerCard.attacks[0].damage;
 
-      
-      playerCardInfo.textContent = 
-      `Joueur: ${playerCard.name} a infligé ${playerCard.attacks[0].damage} points de dégâts.
+
+      playerCardInfo.textContent =
+         `Joueur: ${playerCard.name} a infligé ${playerCard.attacks[0].damage} points de dégâts.
       Adversaire: ${opponentCard.name} a ${opponentCurrentHp} points de vie restants.
       
       
@@ -284,43 +268,32 @@ export class Game {
 
    }
 
-   genrateFiveCards() {
-      const cards = [];
-      for (let i = 0; i < 5; i++) {
-         const card = this.player.drawCard();
-         if (card) {
-            cards.push(card);
-         }
+   drawInitialCards(player, count = 5) {
+      for (let i = 0; i < count; i++) {
+         player.drawCard();  // drawCard() ajoute déjà la carte dans la main
       }
-      return cards;
    }
 
 
 
+   renderCards() {
+      this.renderPlayerCards();
+      this.renderOpponentCards();
+   }
+
+
+   addDropListeners(...elements) {
+      elements.forEach(el => {
+         el.addEventListener("dragover", (ev) => this.dragover_handler(ev));
+         el.addEventListener("drop", (ev) => this.drop_handler(ev));
+      });
+   }
 
 
    startGame() {
-
-
-      this.genrateFiveCards();
-
+      [this.player, this.opponent].forEach(player => this.drawInitialCards(player));
+      this.addDropListeners(this.playerActive, this.opponentActive, this.handContainer);
       this.renderCards();
-
-
-
-      this.deckContainer.addEventListener("dragstart", (ev) => this.dragstart_handler(ev));
-      this.playerActive.addEventListener("dragstart", (ev) => this.dragstart_handler(ev));
-      this.opponentActive.addEventListener("dragstart", (ev) => this.dragstart_handler(ev));
-
-      this.handContainer.addEventListener("dragover", (ev) => this.dragover_handler(ev));
-      this.playerActive.addEventListener("dragover", (ev) => this.dragover_handler(ev));
-      this.opponentActive.addEventListener("dragover", (ev) => this.dragover_handler(ev));
-
-      this.handContainer.addEventListener("drop", (ev) => this.drop_handler(ev));
-      this.playerActive.addEventListener("drop", (ev) => this.drop_handler(ev));
-      this.opponentActive.addEventListener("drop", (ev) => this.drop_handler(ev));
-
    }
+
 }
-
-
