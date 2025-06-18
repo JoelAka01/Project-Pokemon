@@ -1,0 +1,227 @@
+/* Pokemon TCG - Styles complémentaires */
+
+/* Variables pour les couleurs du jeu */
+:root {
+  --pokemon-blue: #3B5BA7;
+  --pokemon-yellow: #FFCB05;
+  --pokemon-red: #E3350D;
+  --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+  --card-hover-shadow: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+  --border-radius: 12px;
+    --background-color: #f0f4f8;
+}
+
+/* Animations pour les cartes */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+  100% { transform: translateY(0px); }
+}
+
+/* Styles généraux */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  transition: background-color 0.3s ease;
+}
+
+/* Styles d'animation et d'interaction pour les cartes */
+.pokemon-card {
+  transition: all 0.3s ease;
+  box-shadow: var(--card-shadow);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.pokemon-card:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: var(--card-hover-shadow);
+  animation: float 2s ease-in-out infinite;
+  cursor: pointer;
+  z-index: 10;
+}
+
+/* Style pour la zone de combat */
+#battle-zone {
+  background: linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(240,240,240,0.5) 100%);
+  border-radius: var(--border-radius);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Styles pour les zones de cartes actives */
+#player-active, #opponent-active {
+  background: rgba(255,255,255,0.5);
+  border: 2px dashed rgba(59, 91, 167, 0.3);
+  transition: all 0.3s ease;
+}
+
+#player-active:hover, #opponent-active:hover {
+  border-color: var(--pokemon-blue);
+  background: rgba(255,255,255,0.8);
+}
+
+/* Styles pour les boutons d'attaque */
+.attack-button {
+  transition: all 0.2s ease;
+  transform-origin: center;
+}
+
+.attack-button:hover {
+  transform: scale(1.05);
+}
+
+.attack-button:active {
+  transform: scale(0.95);
+}
+
+/* Styles pour la modal */
+#card-modal .modal-content {
+  border-radius: var(--border-radius);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Media queries pour la responsivité */
+@media (max-width: 768px) {
+  #game-area {
+    padding: 0.5rem;
+  }
+  
+  .pokemon-card {
+    max-width: 100px;
+  }
+  
+  #battle-zone {
+    flex-direction: column;
+    gap: 2rem;
+  }
+  
+  #hand, #opponent-hand {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 640px) {
+  header img {
+    height: 60px;
+  }
+  
+  #attack-buttons {
+    flex-direction: column;
+  }
+  
+  .pokemon-card {
+    max-width: 80px;
+  }
+}
+
+@media (max-width: 480px) {
+  header {
+    padding: 0.5rem 0;
+  }
+  
+  h2, h3 {
+    font-size: 0.9rem;
+  }
+  
+  #player-active, #opponent-active {
+    min-height: 160px;
+    width: 120px;
+  }
+}
+
+/* Styles supplémentaires pour les animations et effets visuels */
+
+/* Animation pour les changements de points de vie */
+.hp-change {
+  transition: all 0.3s ease;
+}
+
+.hp-decrease {
+  color: var(--pokemon-red);
+  animation: pulse-red 1s ease;
+}
+
+.hp-increase {
+  color: #22c55e;
+  animation: pulse-green 1s ease;
+}
+
+@keyframes pulse-red {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); background-color: rgba(239, 68, 68, 0.2); }
+}
+
+@keyframes pulse-green {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); background-color: rgba(34, 197, 94, 0.2); }
+}
+
+/* Styles pour les résultats d'attaque */
+.attack-result {
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius);
+  font-weight: 600;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s ease;
+}
+
+.attack-result.animate-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.critical-hit {
+  color: var(--pokemon-red);
+  font-weight: 700;
+}
+
+.super-effective {
+  color: #047857;
+}
+
+.not-effective {
+  color: #6b7280;
+}
+
+/* Effet de survol amélioré pour les zones de cartes actives */
+#player-active:empty, #opponent-active:empty {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" fill="none" stroke="rgba(59, 91, 167, 0.2)" stroke-width="2"><rect x="10" y="10" width="80" height="110" rx="5" ry="5" /></svg>');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 60%;
+}
+
+/* Animation pour les cartes jouées */
+@keyframes card-played {
+  0% { transform: scale(1) translateY(0); opacity: 1; }
+  20% { transform: scale(1.1) translateY(-20px); }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.card-played {
+  animation: card-played 0.5s ease forwards;
+}
+
+/* Animation pour les boutons d'attaque */
+#attack-buttons button {
+  background: linear-gradient(to bottom, var(--pokemon-red), #c52d2f);
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+}
+
+#attack-buttons button:hover {
+  background: linear-gradient(to bottom, #ff5f5f, var(--pokemon-red));
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+#attack-buttons button:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}

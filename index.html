@@ -3,37 +3,37 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <meta name="description" content="Jeu de cartes Pokémon en ligne" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
   <title>Pokémon TCG</title>
 </head>
 
 <body class="min-h-screen bg-gradient-to-br from-yellow-200 to-blue-300 font-sans text-gray-800">
 
   <!-- Header -->
-  <header class="flex items-center justify-center py-6">
-    <img src="img/logo.png" alt="Logo Pokémon Trading Card Game" class="h-20 object-contain" />
+  <header class="flex items-center justify-center py-4 md:py-6 px-4">
+    <img src="img/logo.png" alt="Logo Pokémon Trading Card Game" class="h-12 sm:h-16 md:h-20 object-contain" />
   </header>
 
-
-
-
   <!-- Plateau de jeu -->
-  <div id="game-area" class="flex flex-col gap-12 px-8 py-6 items-center">
-    <div id="timer-display" class="text-center text-sm text-gray-700 mt-2"></div>
+  <div id="game-area" class="flex flex-col gap-6 md:gap-12 px-4 md:px-8 py-4 md:py-6 items-center">
+    <div id="timer-display" class="text-center text-sm text-gray-700 mt-2 mb-2 px-2 py-1 bg-white bg-opacity-70 rounded-full shadow-sm"></div>
 
     <!-- Ligne Adversaire -->
-    <div class="flex justify-between items-center w-full max-w-6xl">
+    <div class="flex flex-col md:flex-row justify-between items-center w-full max-w-6xl gap-4 md:gap-0">
       <!-- Main adverse -->
-      <div>
+      <div class="w-full md:w-auto">
         <h2 class="font-bold mb-2 text-center">Main de l'adversaire</h2>
-        <div id="opponent-hand" class="flex space-x-2 bg-white p-3 rounded-lg shadow border min-h-[120px]">
+        <div id="opponent-hand" class="flex flex-wrap justify-center md:space-x-2 bg-white p-2 md:p-3 rounded-lg shadow border min-h-[100px] md:min-h-[120px]">
           <!-- Cartes dos vers toi -->
         </div>
       </div>
 
       <!-- Pioche adverse -->
-      <div class="flex flex-col items-center">
+      <div class="flex flex-col items-center mt-4 md:mt-0">
         <h2 class="font-bold mb-1">Pioche adverse</h2>
         <div id="opponent-deck" class="flex flex-col items-center space-y-2">
           <!-- Injectée en JS -->
@@ -42,19 +42,19 @@
     </div>
 
     <!-- Zone de combat -->
-    <div id="battle-zone" class="w-full flex  justify-around items-center border-t border-b py-6">
+    <div id="battle-zone" class="w-full flex flex-col md:flex-row justify-around items-center border-t border-b py-4 md:py-6 gap-6 md:gap-0 rounded-lg">
       <div class="text-center">
         <h3 class="font-bold mb-2">Adversaire</h3>
 
         <div id="opponent-active"
-          class="min-h-[200px] w-[150px] border-2 border-dashed border-gray-400 rounded-lg flex items-center justify-center">
+          class="min-h-[180px] md:min-h-[200px] w-[130px] md:w-[150px] border-2 border-dashed border-gray-400 rounded-lg flex items-center justify-center pokemon-card-zone">
 
         </div>
 
-        <p id="opponent-hp" class="font-mono text-sm mt-1"></p>
+        <p id="opponent-hp" class="font-mono text-sm mt-1 bg-white bg-opacity-70 px-2 py-1 rounded-full inline-block"></p>
       </div>
 
-      <div id="results">
+      <div id="results" class="bg-white bg-opacity-80 p-3 rounded-lg shadow-md">
 
       </div>
 
@@ -62,11 +62,11 @@
         <h3 class="font-bold mb-2">Toi</h3>
 
         <div id="player-active"
-          class="min-h-[200px] w-[150px] border-2 border-dashed border-gray-400 rounded-lg flex items-center justify-center">
+          class="min-h-[180px] md:min-h-[200px] w-[130px] md:w-[150px] border-2 border-dashed border-gray-400 rounded-lg flex items-center justify-center pokemon-card-zone">
 
         </div>
 
-        <p id="player-hp" class="font-mono text-sm mt-1"></p>
+        <p id="player-hp" class="font-mono text-sm mt-1 bg-white bg-opacity-70 px-2 py-1 rounded-full inline-block"></p>
         <div id="attack-buttons" class="flex flex-wrap justify-center mt-3 gap-2"></div>
       </div>
     </div>
@@ -74,17 +74,17 @@
 
 
     <!-- Ligne Joueur -->
-    <div class="flex justify-between items-center w-full max-w-6xl">
+    <div class="flex flex-col md:flex-row justify-between items-center w-full max-w-6xl gap-4 md:gap-0">
       <!-- Ta main -->
-      <div>
+      <div class="w-full md:w-auto">
         <h2 class="font-bold mb-2 text-center">Ta main</h2>
-        <div id="hand" class="flex space-x-2 bg-white p-3 rounded-lg shadow border min-h-[150px]">
+        <div id="hand" class="flex flex-wrap justify-center md:space-x-2 bg-white p-2 md:p-3 rounded-lg shadow border min-h-[120px] md:min-h-[150px]">
           <!-- Cartes visibles -->
         </div>
       </div>
 
       <!-- Ta pioche -->
-      <div class="flex flex-col items-center">
+      <div class="flex flex-col items-center mt-4 md:mt-0">
         <h2 class="font-bold mb-1">Ta Pioche</h2>
         <div id="deck" class="flex flex-col items-center space-y-2">
           <!-- Injectée en JS -->
@@ -94,19 +94,19 @@
 
   </div>
 
-  <div id="card-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white p-6 rounded-lg max-w-2xl w-full mx-4">
+  <div id="card-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white p-4 md:p-6 rounded-lg max-w-md md:max-w-2xl w-full mx-auto modal-content">
       <div class="flex justify-between items-start mb-4">
-        <h2 id="modal-title" class="text-xl font-bold"></h2>
+        <h2 id="modal-title" class="text-lg md:text-xl font-bold"></h2>
         <button id="close-modal" class="text-gray-500 hover:text-gray-700">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
-      <div class="flex flex-col md:flex-row gap-6">
-        <img id="modal-img" class="w-72 h-auto rounded-lg" src="" alt="Carte Pokémon">
-        <div class="space-y-4">
+      <div class="flex flex-col md:flex-row gap-4 md:gap-6">
+        <img id="modal-img" class="w-full md:w-72 h-auto rounded-lg mx-auto md:mx-0" src="" alt="Carte Pokémon">
+        <div class="space-y-3 md:space-y-4">
           <div id="modal-info" class="space-y-2"></div>
         </div>
       </div>
@@ -116,13 +116,46 @@
 
   <!-- Script JS -->
   <script src="js/main.js" type="module"></script>
-  <!-- <script src="js/game.js" type="module"></script> -->
   <script>
-
-
-
+    // Ajout de classes aux éléments du jeu pour appliquer les styles
+    document.addEventListener('DOMContentLoaded', function() {
+      // Ajouter des classes aux cartes injectées par JS
+      const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          if (mutation.addedNodes.length) {
+            const cards = document.querySelectorAll('.card-img');
+            cards.forEach(card => {
+              if (!card.classList.contains('pokemon-card')) {
+                card.classList.add('pokemon-card');
+              }
+            });
+            
+            // Ajouter des classes aux boutons d'attaque
+            const attackButtons = document.querySelectorAll('#attack-buttons button');
+            attackButtons.forEach(button => {
+              if (!button.classList.contains('attack-button')) {
+                button.classList.add('attack-button');
+              }
+            });
+          }
+        });
+      });
+      
+      // Observer les zones où des cartes seront ajoutées
+      const config = { childList: true, subtree: true };
+      const targetNodes = [
+        document.getElementById('hand'),
+        document.getElementById('opponent-hand'),
+        document.getElementById('player-active'),
+        document.getElementById('opponent-active'),
+        document.getElementById('attack-buttons')
+      ];
+      
+      targetNodes.forEach(node => {
+        if (node) observer.observe(node, config);
+      });
+    });
   </script>
-
 </body>
 
 </html>
