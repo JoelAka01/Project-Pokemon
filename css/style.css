@@ -2,13 +2,15 @@
 
 /* Variables pour les couleurs du jeu */
 :root {
-  --pokemon-blue: #3B5BA7;
-  --pokemon-yellow: #FFCB05;
-  --pokemon-red: #E3350D;
-  --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
-  --card-hover-shadow: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+  --primary-color: #7C80FC;
+  --primary-light: #ABA0F9;
+  --primary-lighter: #D6CFFF;
+  --secondary-color: #FEFEFF;
+  --secondary-light: #EBE3F5;
+  --card-shadow: 0 4px 6px rgba(124, 128, 252, 0.2), 0 1px 3px rgba(124, 128, 252, 0.1);
+  --card-hover-shadow: 0 10px 15px rgba(124, 128, 252, 0.2), 0 4px 6px rgba(124, 128, 252, 0.15);
   --border-radius: 12px;
-    --background-color: #f0f4f8;
+  --background-color: var(--secondary-light);
 }
 
 /* Animations pour les cartes */
@@ -22,6 +24,8 @@
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   transition: background-color 0.3s ease;
+  background-color: var(--secondary-light);
+  color: var(--primary-color);
 }
 
 /* Styles d'animation et d'interaction pour les cartes */
@@ -30,6 +34,8 @@ body {
   box-shadow: var(--card-shadow);
   border-radius: var(--border-radius);
   overflow: hidden;
+  background-color: var(--secondary-color);
+  border: 2px solid var(--primary-lighter);
 }
 
 .pokemon-card:hover {
@@ -42,21 +48,21 @@ body {
 
 /* Style pour la zone de combat */
 #battle-zone {
-  background: linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(240,240,240,0.5) 100%);
+  background: linear-gradient(135deg, var(--secondary-color) 0%, var(--secondary-light) 100%);
   border-radius: var(--border-radius);
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: inset 0 2px 4px rgba(124, 128, 252, 0.1);
 }
 
 /* Styles pour les zones de cartes actives */
 #player-active, #opponent-active {
-  background: rgba(255,255,255,0.5);
-  border: 2px dashed rgba(59, 91, 167, 0.3);
+  background: rgba(254, 254, 255, 0.7);
+  border: 2px dashed rgba(124, 128, 252, 0.5);
   transition: all 0.3s ease;
 }
 
 #player-active:hover, #opponent-active:hover {
-  border-color: var(--pokemon-blue);
-  background: rgba(255,255,255,0.8);
+  border-color: var(--primary-color);
+  background: var(--secondary-color);
 }
 
 /* Styles pour les boutons d'attaque */
@@ -137,7 +143,7 @@ body {
 }
 
 .hp-decrease {
-  color: var(--pokemon-red);
+  color: #ff5f5f;
   animation: pulse-red 1s ease;
 }
 
@@ -148,7 +154,7 @@ body {
 
 @keyframes pulse-red {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); background-color: rgba(239, 68, 68, 0.2); }
+  50% { transform: scale(1.1); background-color: rgba(255, 95, 95, 0.2); }
 }
 
 @keyframes pulse-green {
@@ -172,7 +178,7 @@ body {
 }
 
 .critical-hit {
-  color: var(--pokemon-red);
+  color: #ff5f5f;
   font-weight: 700;
 }
 
@@ -186,7 +192,7 @@ body {
 
 /* Effet de survol amélioré pour les zones de cartes actives */
 #player-active:empty, #opponent-active:empty {
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" fill="none" stroke="rgba(59, 91, 167, 0.2)" stroke-width="2"><rect x="10" y="10" width="80" height="110" rx="5" ry="5" /></svg>');
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" fill="none" stroke="rgba(124, 128, 252, 0.3)" stroke-width="2"><rect x="10" y="10" width="80" height="110" rx="5" ry="5" /></svg>');
   background-repeat: no-repeat;
   background-position: center;
   background-size: 60%;
@@ -205,23 +211,105 @@ body {
 
 /* Animation pour les boutons d'attaque */
 #attack-buttons button {
-  background: linear-gradient(to bottom, var(--pokemon-red), #c52d2f);
+  background: linear-gradient(to bottom, var(--primary-color), var(--primary-light));
   border: none;
   color: white;
   padding: 8px 16px;
   border-radius: 20px;
   font-weight: bold;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 4px rgba(124, 128, 252, 0.3);
   transition: all 0.2s ease;
 }
 
 #attack-buttons button:hover {
-  background: linear-gradient(to bottom, #ff5f5f, var(--pokemon-red));
+  background: linear-gradient(to bottom, var(--primary-light), var(--primary-color));
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 8px rgba(124, 128, 252, 0.4);
 }
 
 #attack-buttons button:active {
   transform: translateY(1px);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 2px rgba(124, 128, 252, 0.3);
+}
+
+/* Styles complémentaires pour la nouvelle palette de couleurs */
+header {
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+  padding: 1rem 0;
+  box-shadow: 0 2px 10px rgba(124, 128, 252, 0.3);
+}
+
+.pokemon-card {
+  background-color: var(--secondary-color);
+  border: 2px solid var(--primary-lighter);
+}
+
+#game-area {
+  background-color: var(--secondary-light);
+  padding: 1.5rem;
+  border-radius: var(--border-radius);
+  box-shadow: 0 5px 15px rgba(124, 128, 252, 0.1);
+}
+
+.card-info {
+  background-color: var(--secondary-color);
+  border-left: 4px solid var(--primary-color);
+}
+
+.game-status {
+  background-color: var(--primary-lighter);
+  color: var(--primary-color);
+  border-radius: var(--border-radius);
+  padding: 0.5rem 1rem;
+  text-align: center;
+  font-weight: bold;
+}
+
+/* Ajustement pour les animations */
+@keyframes pulse-red {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); background-color: rgba(255, 95, 95, 0.2); }
+}
+
+@keyframes pulse-green {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); background-color: rgba(34, 197, 94, 0.2); }
+}
+
+/* Style pour les modales */
+.modal-header {
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+}
+
+.modal-body {
+  background-color: var(--secondary-color);
+}
+
+.modal-footer {
+  background-color: var(--secondary-light);
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-light);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-light);
+  border-color: var(--primary-color);
+}
+
+/* Améliorations de contrastes pour l'accessibilité */
+h1, h2, h3 {
+  color: var(--primary-color);
+}
+
+a {
+  color: var(--primary-color);
+}
+
+a:hover {
+  color: var(--primary-light);
 }
