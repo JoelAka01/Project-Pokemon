@@ -1,7 +1,7 @@
 import { Player } from './player.js';
+import { CardModal } from './ui/cardModal.js';
 
 export class Game {
-
    constructor(playerDeck, opponentDeck, maxHandSize = 5) {
       this.player = new Player(playerDeck, maxHandSize);
       this.opponent = new Player(opponentDeck, maxHandSize);
@@ -12,19 +12,14 @@ export class Game {
       this.handContainer = document.getElementById("hand");
       this.opponentDeckContainer = document.getElementById("opponent-deck");
       this.opponentHandContainer = document.getElementById("opponent-hand");
-      this.modal = document.getElementById("card-modal");
-      this.closeModalBtn = document.getElementById("close-modal");
+      this.cardModal = new CardModal();
       this.maxHandSize = maxHandSize;
-      this.setupModal();
       this.drawCooldown = 5 * 60; // 5 minutes en secondes
       this.timeLeft = 0;
       this.drawTimerElement = document.getElementById("draw-timer");
       this.canDraw = true;  // Indique si on peut tirer une carte
       this.drawTimerId = null;
-
    }
-
-
 
    updateTimerDisplay() {
       const minutes = Math.floor(this.timeLeft / 60).toString().padStart(2, '0');
@@ -32,7 +27,6 @@ export class Game {
       this.drawTimerElement.textContent = `Prochain tirage dans : ${minutes}:${seconds}`;
    }
 
-   // Nouvelle méthode à ajouter dans ta classe Game :
    attemptDrawCard() {
       if (!this.canDraw) {
          alert("Attends que le timer expire pour tirer une nouvelle carte !");
@@ -93,162 +87,267 @@ export class Game {
       }, 1000);
    }
 
-
-   setupModal() {
-      this.closeModalBtn.addEventListener("click", () => {
-         this.modal.classList.add("hidden");
-      });
-
-      // Fermer la modale en cliquant en dehors
-      this.modal.addEventListener("click", (e) => {
-         if (e.target === this.modal) {
-            this.modal.classList.add("hidden");
-         }
-      });
-   }
-
-
-   formatCost(costs) {
-      if (!costs || costs.length === 0) return "Aucun";
-
-      // Compte le nombre de chaque type d'énergie
-      const costCount = costs.reduce((acc, cost) => {
-         acc[cost] = (acc[cost] || 0) + 1;
-         return acc;
-      }, {});
-
-      // Formate le résultat
-      return Object.entries(costCount)
-         .map(([type, count]) => `${type} x${count}`)
-         .join(", ");
-   }
-
    showCardModal(card) {
-      const modalTitle = document.getElementById("modal-title");
-      const modalImg = document.getElementById("modal-img");
-      const modalInfo = document.getElementById("modal-info");
-      modalTitle.textContent = card.name;
-      modalImg.src = card.imageUrl;
-      let infoHTML = `
-         <p class="text-lg"><span class="font-bold">HP:</span> ${card.hp}</p>
-         <p class="text-lg"><span class="font-bold">Types:</span> ${card.types.join(", ")}</p>
-      `;
-
-      if (card.attacks && card.attacks.length > 0) {
-         infoHTML += `<div class="mt-4">
-            <p class="font-bold text-lg mb-2">Attaques:</p>
-            ${card.attacks.map(attack => `
-               <div class="mb-2">
-                  <p class="font-semibold">${attack.name}</p>
-                  <p>Dégâts: ${attack.damage}</p>
-                  <p>Coût: ${this.formatCost(attack.cost)}</p>
-               </div>
-            `).join("")}
-         </div>`;
-      }
-
-      if (card.weaknesses && card.weaknesses.length > 0) {
-         infoHTML += `<div class="mt-4">
-            <p class="font-bold text-lg mb-2">Faiblesses:</p>
-            ${card.weaknesses.map(weakness => `
-               <p>${weakness.type}: ${weakness.value}</p>
-            `).join("")}
-         </div>`;
-      }
-
-      modalInfo.innerHTML = infoHTML;
-      this.modal.classList.remove("hidden");
+      this.cardModal.showCardModal(card);
    }
-
 
    renderDeck(container, deck, dragHandler = null) {
-      container.innerHTML = "";
+      // Nettoyer le conteneur de manière sécurisée
+      while (container.firstChild) {
+         container.removeChild(container.firstChild);
+      }
+
+      // Wrapper pour le deck pour un meilleur positionnement
+      const deckWrapper = document.createElement("div");
+      deckWrapper.className = "relative mb-8 mt-2"; // Ajout d'une marge en bas pour l'indicateur
+
+      // Créer l'image du dos de la carte
       const cardBack = document.createElement("img");
-      cardBack.src = "../img/back-card.jpg"; // URL de l'image du dos de la carte
+      cardBack.src = "img/back-card.jpg"; // Correction du chemin relatif
       cardBack.alt = "Dos de carte Pokémon";
-      cardBack.className = "w-40 h-auto rounded-lg shadow cursor-pointer transition-transform duration-200 hover:scale-125 cursor-pointer";
+      cardBack.className = "w-40 h-auto rounded-lg shadow-xl cursor-pointer transition-all duration-300 hover:scale-110 hover:-translate-y-2 pokemon-card";
       cardBack.id = "deck-card";
       cardBack.setAttribute("draggable", "true");
-      cardBack.addEventListener("dragstart", dragHandler);
-      container.appendChild(cardBack);
+
+      // Ajouter le gestionnaire d'événements drag si fourni
+      if (dragHandler) {
+         cardBack.addEventListener("dragstart", dragHandler);
+      }
+
+      deckWrapper.appendChild(cardBack);
+
+      // Ajouter un indicateur visuel du nombre de cartes plus visible
+      const counter = document.createElement("div");
+      counter.className = "mt-2 flex items-center justify-center";
+
+      const cardIcon = document.createElement("div");
+      cardIcon.className = "mr-1 text-xl";
+      cardIcon.innerHTML = "🃏"; // Icône carte
+      counter.appendChild(cardIcon);
+
       const label = document.createElement("p");
-      label.textContent = `${deck.length} carte(s)`;
-      label.className = "text-sm text-gray-600 mt-2 text-center";
-      container.appendChild(label);
+      label.textContent = `${deck.length} carte${deck.length > 1 ? 's' : ''}`;
+      label.className = "text-white font-bold text-lg bg-gradient-to-r from-blue-600 to-purple-600 rounded-full px-3 py-1 shadow-md";
+      counter.appendChild(label);
+
+      // Ajouter également un badge sur la carte pour une indication rapide
+      const quickBadge = document.createElement("div");
+      quickBadge.className = "absolute -top-3 -right-3 w-10 h-10 rounded-full bg-red-600 border-2 border-white shadow-lg flex items-center justify-center text-lg font-bold text-white";
+      quickBadge.textContent = deck.length.toString();
+      deckWrapper.appendChild(quickBadge);
+
+      // Ajouter le wrapper et le compteur au conteneur
+      container.appendChild(deckWrapper);
+      container.appendChild(counter);
    }
 
-
    renderPlayerCards() {
+      // Rendre le deck
       this.renderDeck(this.deckContainer, this.player.deck, (ev) => this.dragstart_handler(ev));
-      this.handContainer.innerHTML = "";
+
+      // Nettoyer le conteneur de la main de manière sécurisée
+      while (this.handContainer.firstChild) {
+         this.handContainer.removeChild(this.handContainer.firstChild);
+      }
+
+      // Rendre chaque carte dans la main du joueur
       this.player.hand.cards.forEach((cardObj, index) => {
+         // Créer un wrapper pour la carte
+         const cardWrapper = document.createElement("div");
+         cardWrapper.className = "card-container relative";
+
+         // Créer l'élément image de la carte
          const card = document.createElement("img");
          card.src = cardObj.imageUrl;
-         card.alt = "Carte Pokémon";
+         card.alt = cardObj.name || "Carte Pokémon";
          card.id = `hand-card-${index}`;
-         card.className = "w-40 h-auto rounded-lg shadow cursor-pointer transition-transform duration-200 hover:scale-125";
+         card.className = "w-40 h-auto rounded-lg shadow cursor-pointer pokemon-card transition-all duration-300";
+
+         // Ajouter les événements
          card.addEventListener("click", () => this.showCardModal(cardObj));
          card.setAttribute("draggable", "true");
          card.addEventListener("dragstart", (ev) => {
             ev.dataTransfer.setData("text/plain", `hand-card-${index}`);
+            // Ajouter une classe pour indiquer que la carte est en cours de glisser
+            card.classList.add("dragging");
          });
-         this.handContainer.appendChild(card);
+
+         // Ajouter un événement pour retirer la classe quand le drag se termine
+         card.addEventListener("dragend", () => {
+            card.classList.remove("dragging");
+         });
+
+         // Ajouter un badge pour les types de carte si disponibles
+         if (cardObj.types && cardObj.types.length > 0) {
+            const typeIndicator = document.createElement("span");
+            const primaryType = cardObj.types[0];
+            typeIndicator.className = `absolute -top-2 -right-2 w-8 h-8 rounded-full type-${primaryType} border-2 border-white shadow-lg flex items-center justify-center text-xs text-white font-bold`;
+
+            // Utiliser nos nouvelles icônes (depuis CardModal)
+            typeIndicator.innerHTML = this.cardModal.getTypeIcon(primaryType);
+
+            // Ajouter une animation au badge
+            typeIndicator.style.animation = "pulse-light 2s infinite";
+            cardWrapper.appendChild(typeIndicator);
+
+            // Ajouter une info-bulle au survol avec tous les types
+            card.setAttribute("title", `Type: ${cardObj.types.join(", ")}`);
+         }
+
+         // Ajouter la carte au wrapper et le wrapper au conteneur
+         cardWrapper.appendChild(card);
+         this.handContainer.appendChild(cardWrapper);
       });
    }
 
-
    renderOpponentCards() {
-      this.renderDeck(this.opponentDeckContainer, this.opponent.deck, (ev) => this.dragstart_handler(ev));
+      // Rendre le deck de l'adversaire
+      this.renderDeck(this.opponentDeckContainer, this.opponent.deck);
 
-      this.opponentHandContainer.innerHTML = "";
-      // Utilise la longueur réelle de la main de l'adversaire au lieu de maxHandSize
+      // Nettoyer le conteneur de la main de l'adversaire de manière sécurisée
+      while (this.opponentHandContainer.firstChild) {
+         this.opponentHandContainer.removeChild(this.opponentHandContainer.firstChild);
+      }
+
+      // Utilise la longueur réelle de la main de l'adversaire
       const opponentHandSize = this.opponent.hand.cards.length;
 
       for (let i = 0; i < opponentHandSize; i++) {
+         // Créer un wrapper pour chaque carte
+         const cardWrapper = document.createElement("div");
+         cardWrapper.className = "card-container relative";
+
+         // Créer l'élément image de la carte
          const card = document.createElement("img");
-         card.src = "../img/back-card.jpg"; // URL de l'image du dos de la carte
+         card.src = "img/back-card.jpg"; // Correction du chemin relatif
          card.alt = "Dos de carte Pokémon";
-         card.className = "w-40 h-auto rounded-lg shadow";
+         card.className = "w-40 h-auto rounded-lg shadow pokemon-card transition-all duration-300";
          card.id = `opponent-hand-card-${i}`;
-         this.opponentHandContainer.appendChild(card);
+
+         // Ajouter un effet de brillance ou un badge numéroté
+         const cardNumber = document.createElement("span");
+         cardNumber.className = "absolute top-1 left-1 w-5 h-5 rounded-full bg-blue-700 border border-white shadow-sm flex items-center justify-center text-xs text-white font-bold";
+         cardNumber.textContent = (i + 1).toString();
+
+         // Ajouter la carte et le badge au wrapper
+         cardWrapper.appendChild(card);
+         cardWrapper.appendChild(cardNumber);
+
+         // Ajouter le wrapper au conteneur
+         this.opponentHandContainer.appendChild(cardWrapper);
       }
    }
 
-
    renderActiveCard(container, card) {
-      container.innerHTML = "";
+      // Nettoyer le conteneur de manière sécurisée
+      while (container.firstChild) {
+         container.removeChild(container.firstChild);
+      }
+
       if (!card) {
+         // Créer un placeholder attractif
+         const placeholderWrapper = document.createElement("div");
+         placeholderWrapper.className = "flex flex-col items-center justify-center h-full w-full bg-gradient-to-r from-gray-700/20 to-gray-900/20 rounded-lg border-2 border-dashed border-yellow-500 animate-pulse";
+
+         // Ajouter une icône
+         const placeholderIcon = document.createElement("div");
+         placeholderIcon.className = "mb-2 text-4xl text-yellow-500";
+         placeholderIcon.innerHTML = "⬇️"; // Emoji flèche vers le bas
+         placeholderWrapper.appendChild(placeholderIcon);
+
+         // Ajouter le texte
          const placeholder = document.createElement("p");
-         placeholder.textContent = "Déposez une carte ici pour l'activer";
-         placeholder.className = "text-center text-gray-500";
-         container.appendChild(placeholder);
+         placeholder.textContent = "Déposez une carte ici";
+         placeholder.className = "text-center text-yellow-400 font-bold";
+         placeholderWrapper.appendChild(placeholder);
+
+         container.appendChild(placeholderWrapper);
          return;
       }
+
+      // Créer un wrapper pour la carte active avec un halo d'énergie
+      const activeCardWrapper = document.createElement("div");
+      activeCardWrapper.className = "relative";
+
+      // Ajouter un effet de halo autour de la carte active
+      const halo = document.createElement("div");
+      const primaryType = card.types && card.types.length > 0 ? card.types[0] : "Colorless";
+      const typeGradient = this.cardModal.getTypeGradient(primaryType).replace("bg-gradient-to-r", "bg-gradient-to-r opacity-70");
+      halo.className = `absolute -inset-2 ${typeGradient} rounded-lg blur-md`;
+      activeCardWrapper.appendChild(halo);
+
+      // Créer l'image de la carte
       const cardImg = document.createElement("img");
       cardImg.src = card.imageUrl;
       cardImg.alt = card.name;
-      cardImg.className = "w-full h-auto rounded-lg shadow";
+      cardImg.className = "relative w-full h-auto rounded-lg shadow-xl pokemon-card transition-all duration-300";
       cardImg.addEventListener("click", () => this.showCardModal(card));
-      container.appendChild(cardImg);
+
+      // Ajouter un indicateur HP bien visible
+      const hpIndicator = document.createElement("div");
+      const hpValue = parseInt(card.hp) || 0;
+      hpIndicator.className = "absolute -bottom-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-red-600 to-red-800 text-white px-4 py-1 rounded-full border-2 border-white shadow-lg font-bold";
+      hpIndicator.textContent = `${hpValue} HP`;
+
+      // Ajouter une indication visuelle que c'est la carte active
+      const activeIndicator = document.createElement("div");
+      activeIndicator.className = "absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full border-2 border-white flex items-center justify-center shadow-lg";
+      activeIndicator.innerHTML = "✓"; // Coche pour indiquer actif
+
+      // Ajouter un badge pour les types si disponibles
+      if (card.types && card.types.length > 0) {
+         const typeIndicator = document.createElement("div");
+         typeIndicator.className = `absolute -top-2 -right-2 w-8 h-8 rounded-full type-${primaryType} border-2 border-white shadow-lg flex items-center justify-center text-xs text-white font-bold`;
+         typeIndicator.innerHTML = this.cardModal.getTypeIcon(primaryType);
+
+         // Tooltip pour le type
+         typeIndicator.setAttribute("title", `Type: ${primaryType}`);
+         activeCardWrapper.appendChild(typeIndicator);
+
+         // Si plusieurs types, afficher un deuxième badge
+         if (card.types.length > 1) {
+            const secondTypeIndicator = document.createElement("div");
+            const secondaryType = card.types[1];
+            secondTypeIndicator.className = `absolute -top-2 -left-2 w-8 h-8 rounded-full type-${secondaryType} border-2 border-white shadow-lg flex items-center justify-center text-xs text-white font-bold`;
+            secondTypeIndicator.innerHTML = this.cardModal.getTypeIcon(secondaryType);
+            secondTypeIndicator.setAttribute("title", `Type secondaire: ${secondaryType}`);
+            activeCardWrapper.appendChild(secondTypeIndicator);
+         }
+      }
+
+      // Assembler les éléments
+      activeCardWrapper.appendChild(cardImg);
+      activeCardWrapper.appendChild(hpIndicator);
+      activeCardWrapper.appendChild(activeIndicator);
+
+      // Ajouter un nom de carte visible
+      const nameTag = document.createElement("div");
+      nameTag.className = "absolute -top-4 left-1/2 transform -translate-x-1/2 bg-blue-800 text-white px-2 py-0.5 rounded text-xs font-bold truncate max-w-[90%] shadow-md";
+      nameTag.textContent = card.name;
+      activeCardWrapper.appendChild(nameTag);
+
+      container.appendChild(activeCardWrapper);
+
+      // Mettre à jour le texte HP sous la carte active
+      const hpDisplay = container.id === "player-active" ?
+         document.getElementById("player-hp") :
+         document.getElementById("opponent-hp");
+
+      if (hpDisplay) {
+         hpDisplay.textContent = `${hpValue} / ${hpValue} HP`;
+      }
    }
 
-
-
-
-
    dragstart_handler(ev) {
-      // L’élément draggué est le dos de la pioche
+      // L'élément draggué est le dos de la pioche
       ev.dataTransfer.setData("text/plain", "deck-card");
       ev.dataTransfer.effectAllowed = "move";
    }
-
-
 
    dragover_handler(ev) {
       ev.preventDefault();  // nécessaire pour autoriser le drop
       ev.dataTransfer.dropEffect = "move";
    }
-
 
    drop_handler(ev) {
       ev.preventDefault();
@@ -321,28 +420,106 @@ export class Game {
          return;
       }
 
-      console.log("Carte active du joueur :", playerCard);
-      console.log("Carte active de l'adversaire :", opponentCard);
+      // Nettoyer le conteneur des résultats
+      while (this.results.firstChild) {
+         this.results.removeChild(this.results.firstChild);
+      }
 
+      // Créer un conteneur de résultats
+      const resultsContainer = document.createElement("div");
+      resultsContainer.className = "p-3 rounded-lg bg-white/30 backdrop-blur-sm shadow-lg";
 
-      this.results.innerHTML = "";
-      const playerCardInfo = document.createElement("p");
+      // Calculer les dégâts et les points de vie restants
+      const playerAttack = playerCard.attacks && playerCard.attacks.length > 0 ? playerCard.attacks[0] : { name: "Attaque", damage: "10" };
+      const opponentAttack = opponentCard.attacks && opponentCard.attacks.length > 0 ? opponentCard.attacks[0] : { name: "Attaque", damage: "10" };
 
-      const playerCurrentHp = playerCard.hp - opponentCard.attacks[0].damage;
-      const opponentCurrentHp = opponentCard.hp - playerCard.attacks[0].damage;
+      const playerDamage = parseInt(playerAttack.damage) || 0;
+      const opponentDamage = parseInt(opponentAttack.damage) || 0;
 
+      const playerCurrentHp = Math.max(0, parseInt(playerCard.hp) - opponentDamage);
+      const opponentCurrentHp = Math.max(0, parseInt(opponentCard.hp) - playerDamage);
 
-      playerCardInfo.textContent =
-         `Joueur: ${playerCard.name} a infligé ${playerCard.attacks[0].damage} points de dégâts.
-      Adversaire: ${opponentCard.name} a ${opponentCurrentHp} points de vie restants.
-      
-      
-      
-      
-      `;
-      playerCardInfo.className = "text-lg font-bold mb-2";
-      this.results.appendChild(playerCardInfo);
+      // Créer les éléments visuels pour le résumé des dégâts du joueur
+      const playerResult = document.createElement("div");
+      playerResult.className = "mb-3 border-b pb-2";
 
+      const playerTitle = document.createElement("h4");
+      playerTitle.className = "font-bold text-green-800";
+      playerTitle.textContent = "Ton attaque";
+      playerResult.appendChild(playerTitle);
+
+      const playerAttackInfo = document.createElement("div");
+      playerAttackInfo.className = "flex items-center justify-between";
+
+      const attackName = document.createElement("span");
+      attackName.className = "text-blue-700 font-medium";
+      attackName.textContent = `${playerAttack.name || "Attaque"}`;
+
+      const damageInfo = document.createElement("span");
+      damageInfo.className = "bg-red-600 text-white px-2 py-1 rounded text-xs";
+      damageInfo.textContent = `${playerDamage} dégâts`;
+
+      playerAttackInfo.appendChild(attackName);
+      playerAttackInfo.appendChild(damageInfo);
+      playerResult.appendChild(playerAttackInfo);
+
+      const opponentHpInfo = document.createElement("div");
+      opponentHpInfo.className = "mt-1";
+      opponentHpInfo.innerHTML = `<span class="font-medium">${opponentCard.name}</span> a <span class="font-bold ${opponentCurrentHp <= 20 ? 'text-red-600' : ''}">${opponentCurrentHp}/${opponentCard.hp} HP</span> restants`;
+      playerResult.appendChild(opponentHpInfo);
+
+      // Ajouter au conteneur des résultats
+      resultsContainer.appendChild(playerResult);
+
+      // Créer les éléments visuels pour le résumé des dégâts de l'adversaire
+      const opponentResult = document.createElement("div");
+
+      const opponentTitle = document.createElement("h4");
+      opponentTitle.className = "font-bold text-blue-800";
+      opponentTitle.textContent = "Attaque adverse";
+      opponentResult.appendChild(opponentTitle);
+
+      const opponentAttackInfo = document.createElement("div");
+      opponentAttackInfo.className = "flex items-center justify-between";
+
+      const oppAttackName = document.createElement("span");
+      oppAttackName.className = "text-blue-700 font-medium";
+      oppAttackName.textContent = `${opponentAttack.name || "Attaque"}`;
+
+      const oppDamageInfo = document.createElement("span");
+      oppDamageInfo.className = "bg-red-600 text-white px-2 py-1 rounded text-xs";
+      oppDamageInfo.textContent = `${opponentDamage} dégâts`;
+
+      opponentAttackInfo.appendChild(oppAttackName);
+      opponentAttackInfo.appendChild(oppDamageInfo);
+      opponentResult.appendChild(opponentAttackInfo);
+
+      const playerHpInfo = document.createElement("div");
+      playerHpInfo.className = "mt-1";
+      playerHpInfo.innerHTML = `<span class="font-medium">${playerCard.name}</span> a <span class="font-bold ${playerCurrentHp <= 20 ? 'text-red-600' : ''}">${playerCurrentHp}/${playerCard.hp} HP</span> restants`;
+      opponentResult.appendChild(playerHpInfo);
+
+      // Ajouter au conteneur des résultats
+      resultsContainer.appendChild(opponentResult);
+
+      // Ajouter un message de victoire/défaite si nécessaire
+      if (playerCurrentHp <= 0 || opponentCurrentHp <= 0) {
+         const battleResult = document.createElement("div");
+         battleResult.className = "mt-3 pt-2 border-t text-center";
+
+         if (opponentCurrentHp <= 0 && playerCurrentHp > 0) {
+            battleResult.innerHTML = `<span class="font-bold text-green-600 text-lg">🎉 Tu as gagné ! 🎉</span>`;
+         } else if (playerCurrentHp <= 0 && opponentCurrentHp > 0) {
+            battleResult.innerHTML = `<span class="font-bold text-red-600 text-lg">❌ Tu as perdu ! ❌</span>`;
+         } else if (playerCurrentHp <= 0 && opponentCurrentHp <= 0) {
+            battleResult.innerHTML = `<span class="font-bold text-purple-600 text-lg">🤝 Match nul ! 🤝</span>`;
+         }
+
+         resultsContainer.appendChild(battleResult);
+      }
+
+      // Ajouter le conteneur au DOM
+      this.results.appendChild(resultsContainer);
    }
 
    drawInitialCards(player, count = 5) {
@@ -351,13 +528,10 @@ export class Game {
       }
    }
 
-
-
    renderCards() {
       this.renderPlayerCards();
       this.renderOpponentCards();
    }
-
 
    addDropListeners(...elements) {
       elements.forEach(el => {
@@ -366,12 +540,10 @@ export class Game {
       });
    }
 
-
    startGame() {
       this.startDrawTimer();
       [this.player, this.opponent].forEach(player => this.drawInitialCards(player));
       this.addDropListeners(this.playerActive, this.opponentActive, this.handContainer);
       this.renderCards();
    }
-
 }
