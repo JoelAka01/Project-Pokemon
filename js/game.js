@@ -5,6 +5,8 @@ export class Game {
    constructor(playerDeck, opponentDeck, maxHandSize = 5) {
       this.player = new Player(playerDeck, maxHandSize);
       this.opponent = new Player(opponentDeck, maxHandSize);
+      this.cardModal = new CardModal();
+
       this.playerActive = document.getElementById("player-active");
       this.opponentActive = document.getElementById("opponent-active");
       this.results = document.getElementById("results");
@@ -12,13 +14,16 @@ export class Game {
       this.handContainer = document.getElementById("hand");
       this.opponentDeckContainer = document.getElementById("opponent-deck");
       this.opponentHandContainer = document.getElementById("opponent-hand");
-      this.cardModal = new CardModal();
-      this.maxHandSize = maxHandSize;
+      this.drawTimerElement = document.getElementById("draw-timer"); this.maxHandSize = maxHandSize;
       this.drawCooldown = 5 * 60; // 5 minutes en secondes
       this.timeLeft = 0;
-      this.drawTimerElement = document.getElementById("draw-timer");
-      this.canDraw = true;  // Indique si on peut tirer une carte
-      this.drawTimerId = null;
+      this.canDraw = true;  // Indique si on peut tirer une carte      this.drawTimerId = null;
+
+      // Déterminer si la partie est sauvegardée via localStorage
+      this.hasSavedGame = localStorage.getItem('pokemonTCG_gameState') !== null;
+
+      // Configurer la sauvegarde automatique
+      this.setupAutoSave();
    }
 
    updateTimerDisplay() {
@@ -45,22 +50,37 @@ export class Game {
 
       // Autoriser le tirage
       this.canDraw = false;
-      const card = this.player.deck.shift();
-      this.player.hand.cards.push(card);
+
+      // Prendre la première carte du deck
+      const cardFromDeck = this.player.deck.shift();
+
+      // Si la main n'est pas vide, prendre la première carte de la main et la mettre à la fin de la pioche
+      if (this.player.hand.cards.length > 0) {
+         const firstHandCard = this.player.hand.cards.shift();
+         this.player.deck.push(firstHandCard);
+         console.log(`Carte "${firstHandCard.name}" déplacée de la main vers la pioche`);
+      }      // Ajouter la carte tirée à la main
+      this.player.hand.cards.push(cardFromDeck);
+      console.log(`Carte "${cardFromDeck.name}" tirée de la pioche vers la main`);
 
       // Démarrer le timer de 5 minutes (300000 ms)
       this.startDrawTimer();
 
-      return card;
-   }
+      // Sauvegarder l'état du jeu après cette action
+      this.saveGameState();
 
+      return cardFromDeck;
+   } 
+   
    startDrawTimer() {
       const timerDisplay = document.getElementById("timer-display");
-      let remainingTime = 300; // secondes
+      let remainingTime = this.timeLeft > 0 ? this.timeLeft : 300; // utiliser le temps sauvegardé ou 5 minutes par défaut
 
       // Affiche le timer dès le début
       if (timerDisplay) {
-         timerDisplay.textContent = `Prochaine carte dans: 5:00`;
+         const minutes = Math.floor(remainingTime / 60);
+         const seconds = remainingTime % 60;
+         timerDisplay.textContent = `Prochaine carte dans: ${minutes}:${seconds.toString().padStart(2, '0')}`;
       }
 
       // Nettoie un éventuel timer précédent
@@ -75,15 +95,18 @@ export class Game {
             const minutes = Math.floor(remainingTime / 60);
             const seconds = remainingTime % 60;
             timerDisplay.textContent = `Prochaine carte dans: ${minutes}:${seconds.toString().padStart(2, '0')}`;
-         }
-
-         if (remainingTime <= 0) {
+         } if (remainingTime <= 0) {
             clearInterval(this.drawTimerId);
             this.canDraw = true;
             if (timerDisplay) {
                timerDisplay.textContent = "Tu peux tirer une carte !";
             }
+            // Sauvegarder l'état quand le timer expire
+            this.saveGameState();
          }
+
+         // Mettre à jour le temps restant pour pouvoir le sauvegarder
+         this.timeLeft = remainingTime;
       }, 1000);
    }
 
@@ -148,9 +171,7 @@ export class Game {
       // Nettoyer le conteneur de la main de manière sécurisée
       while (this.handContainer.firstChild) {
          this.handContainer.removeChild(this.handContainer.firstChild);
-      }
-
-      // Rendre chaque carte dans la main du joueur
+      }      // Rendre chaque carte dans la main du joueur
       this.player.hand.cards.forEach((cardObj, index) => {
          // Créer un wrapper pour la carte
          const cardWrapper = document.createElement("div");
@@ -161,7 +182,11 @@ export class Game {
          card.src = cardObj.imageUrl;
          card.alt = cardObj.name || "Carte Pokémon";
          card.id = `hand-card-${index}`;
-         card.className = "w-40 h-auto rounded-lg shadow cursor-pointer pokemon-card transition-all duration-300";
+
+         // Ajouter une classe spéciale pour la première carte qui sera recyclée
+         card.className = index === 0
+            ? "w-40 h-auto rounded-lg shadow cursor-pointer pokemon-card transition-all duration-300 first-card-to-recycle"
+            : "w-40 h-auto rounded-lg shadow cursor-pointer pokemon-card transition-all duration-300";
 
          // Ajouter les événements
          card.addEventListener("click", () => this.showCardModal(cardObj));
@@ -221,7 +246,7 @@ export class Game {
          const card = document.createElement("img");
          card.src = "img/back-card.jpg"; // Correction du chemin relatif
          card.alt = "Dos de carte Pokémon";
-         card.className = "w-40 h-auto rounded-lg shadow pokemon-card transition-all duration-300";
+         card.className = "w-40 h-auto rounded-lg shadow  transition-all duration-300";
          card.id = `opponent-hand-card-${i}`;
 
          // Ajouter un effet de brillance ou un badge numéroté
@@ -347,8 +372,8 @@ export class Game {
    dragover_handler(ev) {
       ev.preventDefault();  // nécessaire pour autoriser le drop
       ev.dataTransfer.dropEffect = "move";
-   }
-
+   } 
+   
    drop_handler(ev) {
       ev.preventDefault();
       const data = ev.dataTransfer.getData("text/plain");
@@ -356,9 +381,20 @@ export class Game {
       console.log("Drop event:", { data, targetId }); // Debug
 
       if (data === "deck-card") {
-         const card = this.attemptDrawCard();
-         if (card) {
-            this.renderCards();
+         // Vérifier si on dépose sur la main du joueur
+         if (targetId === "hand") {
+            const card = this.attemptDrawCard();
+            if (card) {               // Animation de recyclage pour montrer le déplacement de la carte
+               this.showCardRecycleAnimation();
+               this.renderCards();
+               this.saveGameState();
+            }
+         } else {
+            // Ancien comportement pour les autres zones de dépôt
+            const card = this.attemptDrawCard();
+            if (card) {
+               this.renderCards();
+            }
          }
       } else if (data.startsWith("hand-card-")) {
          const index = parseInt(data.split("-")[2]);
@@ -387,12 +423,11 @@ export class Game {
                   this.opponent.activeCard = this.opponent.hand.cards.splice(randomIndex, 1)[0];
                   this.renderActiveCard(this.opponentActive, this.opponent.activeCard);
                   this.renderOpponentCards();
-               }
-
-               this.renderCards();
+               } this.renderCards();
                if (this.opponent.activeCard) {
                   this.displayResults();
                }
+               this.saveGameState();
             } else {
                alert("Tu as déjà un Pokémon actif !");
             }
@@ -538,12 +573,202 @@ export class Game {
          el.addEventListener("dragover", (ev) => this.dragover_handler(ev));
          el.addEventListener("drop", (ev) => this.drop_handler(ev));
       });
-   }
+   } 
+   
+   
+   startGame() {      // Essayer de charger un jeu sauvegardé
+      const gameLoaded = this.loadGameState();
 
-   startGame() {
+      if (!gameLoaded) {
+         // Si aucun jeu sauvegardé, initialiser un nouveau jeu
+         [this.player, this.opponent].forEach(player => this.drawInitialCards(player));
+         this.showTutorialMessage("Astuce: Quand tu tires une carte de ta pioche pour la mettre dans ta main, la première carte de ta main retourne au bas de la pioche! ♻️");
+      } else {
+         // Afficher un message de bienvenue pour le jeu chargé
+         this.showTutorialMessage("Ton jeu précédent a été restauré! 🎮 Continue de jouer où tu t'étais arrêté.");
+      }
+
+      // Ajouter un bouton de réinitialisation
+      this.addResetButton();
+
+      // Dans tous les cas, configurer l'interface
       this.startDrawTimer();
-      [this.player, this.opponent].forEach(player => this.drawInitialCards(player));
       this.addDropListeners(this.playerActive, this.opponentActive, this.handContainer);
       this.renderCards();
+
+      // Rendu des cartes actives si elles existent
+      if (this.player.activeCard) {
+         this.renderActiveCard(this.playerActive, this.player.activeCard);
+      }
+
+      if (this.opponent.activeCard) {
+         this.renderActiveCard(this.opponentActive, this.opponent.activeCard);
+      }
+
+      // Afficher les résultats si les deux joueurs ont une carte active
+      if (this.player.activeCard && this.opponent.activeCard) {
+         this.displayResults();
+      }
+   }
+
+   showTutorialMessage(message) {
+      const tutorialElement = document.createElement("div");
+      tutorialElement.className = "fixed top-20 left-1/2 transform -translate-x-1/2 bg-blue-600/90 text-white py-2 px-4 rounded-lg shadow-lg z-50 max-w-md text-center";
+      tutorialElement.innerHTML = message;
+      tutorialElement.style.transition = "all 0.5s ease";
+
+      // Ajouter un bouton de fermeture
+      const closeBtn = document.createElement("button");
+      closeBtn.innerHTML = "×";
+      closeBtn.className = "absolute top-1 right-2 text-white hover:text-red-300";
+      closeBtn.onclick = () => {
+         tutorialElement.style.opacity = "0";
+         setTimeout(() => {
+            if (tutorialElement.parentNode) {
+               tutorialElement.parentNode.removeChild(tutorialElement);
+            }
+         }, 500);
+      };
+
+      tutorialElement.appendChild(closeBtn);
+
+      // Faire disparaître automatiquement après 10 secondes
+      setTimeout(() => {
+         tutorialElement.style.opacity = "0";
+         setTimeout(() => {
+            if (tutorialElement.parentNode) {
+               tutorialElement.parentNode.removeChild(tutorialElement);
+            }
+         }, 500);
+      }, 10000);
+
+      document.body.appendChild(tutorialElement);
+
+      // Petite animation d'entrée
+      tutorialElement.style.opacity = "0";
+      tutorialElement.style.transform = "translate(-50%, -20px)";
+      setTimeout(() => {
+         tutorialElement.style.opacity = "1";
+         tutorialElement.style.transform = "translate(-50%, 0)";
+      }, 100);
+   }
+
+   showCardRecycleAnimation() {
+      // Créer un élément pour l'animation de recyclage
+      const animElement = document.createElement("div");
+      animElement.className = "fixed z-50 bg-white/80 backdrop-blur-sm rounded-lg py-2 px-4 shadow-xl border border-green-500 text-green-700 font-bold";
+      animElement.innerHTML = `♻️ Carte recyclée dans la pioche!`;
+      animElement.style.top = "20%";
+      animElement.style.left = "50%";
+      animElement.style.transform = "translateX(-50%) scale(0)";
+      animElement.style.transition = "all 0.5s ease-out";
+
+      // Ajouter l'élément au body
+      document.body.appendChild(animElement);
+
+      // Déclencher l'animation
+      setTimeout(() => {
+         animElement.style.transform = "translateX(-50%) scale(1)";
+      }, 50);
+
+      // Supprimer l'élément après l'animation
+      setTimeout(() => {
+         animElement.style.opacity = "0";
+         setTimeout(() => {
+            document.body.removeChild(animElement);
+         }, 500);
+      }, 1500);
+   }
+
+   // Sauvegarde l'état du jeu dans le localStorage
+   saveGameState() {
+      const gameState = {
+         player: {
+            deck: this.player.deck,
+            hand: this.player.hand.cards,
+            activeCard: this.player.activeCard
+         },
+         opponent: {
+            deck: this.opponent.deck,
+            hand: this.opponent.hand.cards,
+            activeCard: this.opponent.activeCard
+         },
+         canDraw: this.canDraw,
+         timeLeft: this.timeLeft
+      };
+
+      localStorage.setItem('pokemonTCG_gameState', JSON.stringify(gameState));
+      console.log("État du jeu sauvegardé");
+   }
+
+   // Charge l'état du jeu depuis le localStorage
+   loadGameState() {
+      const savedState = localStorage.getItem('pokemonTCG_gameState');
+
+      if (!savedState) {
+         console.log("Pas d'état sauvegardé, démarrage d'un nouveau jeu");
+         return false;
+      }
+
+      try {
+         const gameState = JSON.parse(savedState);
+
+         // Restaurer l'état du joueur
+         this.player.deck = gameState.player.deck;
+         this.player.hand.cards = gameState.player.hand;
+         this.player.activeCard = gameState.player.activeCard;
+
+         // Restaurer l'état de l'adversaire
+         this.opponent.deck = gameState.opponent.deck;
+         this.opponent.hand.cards = gameState.opponent.hand;
+         this.opponent.activeCard = gameState.opponent.activeCard;
+
+         // Restaurer l'état du jeu
+         this.canDraw = gameState.canDraw;
+         this.timeLeft = gameState.timeLeft || 0;
+
+         console.log("État du jeu chargé avec succès");
+         return true;
+      } catch (error) {
+         console.error("Erreur lors du chargement de l'état du jeu:", error);
+         localStorage.removeItem('pokemonTCG_gameState');
+         return false;
+      }
+   }
+
+   // Réinitialise complètement le jeu
+   resetGame() {
+      // Supprimer les données sauvegardées
+      localStorage.removeItem('pokemonTCG_gameState');
+
+      // Rafraîchir la page pour redémarrer un nouveau jeu
+      window.location.reload();
+   }
+
+   // Ajoute un bouton de réinitialisation dans l'interface
+   addResetButton() {
+      const resetButton = document.createElement("button");
+      resetButton.innerHTML = "🔄 Nouveau jeu";
+      resetButton.className = "fixed bottom-4 right-4 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transition-all duration-300";
+      resetButton.onclick = () => {
+         if (confirm("Êtes-vous sûr de vouloir recommencer une nouvelle partie? La partie en cours sera perdue.")) {
+            this.resetGame();
+         }
+      };
+
+      document.body.appendChild(resetButton);
+   }
+
+   // Configure la sauvegarde automatique périodique
+   setupAutoSave() {
+      // Sauvegarde automatique toutes les 30 secondes
+      setInterval(() => {
+         this.saveGameState();
+      }, 30000);
+
+      // Sauvegarde également quand l'utilisateur quitte la page
+      window.addEventListener('beforeunload', () => {
+         this.saveGameState();
+      });
    }
 }

@@ -1,5 +1,6 @@
 // Gestionnaire de combats Pokémon
 import { Battle } from '../battle.js';
+import { HealthBar } from '../ui/healthBar.js';
 
 export class BattleManager {
    constructor(game, resultsElement) {
@@ -60,12 +61,20 @@ export class BattleManager {
       // Si les cartes ont un HP, le mettre à jour
       if (opponent.activeCard.hp) {
          const currentHp = opponent.activeCard.currentHp || opponent.activeCard.hp;
-         opponent.activeCard.currentHp = Math.max(0, currentHp - damage);
+         opponent.activeCard.currentHp = Math.max(0, currentHp - damage);         // Mettre à jour la barre de vie de l'adversaire
+         HealthBar.updateHealthBar(this.game.opponentActive, opponent.activeCard);
 
          // Gérer l'état KO
          if (opponent.activeCard.currentHp <= 0) {
             // Dans une version plus avancée, on pourrait gérer la défaite ici
             opponent.activeCard.isKO = true;
+
+            // Ajouter effet visuel KO
+            const opponentCard = this.game.opponentActive.querySelector('.pokemon-card');
+            if (opponentCard) {
+               opponentCard.style.filter = 'grayscale(100%) brightness(40%)';
+               opponentCard.style.transform = 'rotate(90deg)';
+            }
          }
       }
    }

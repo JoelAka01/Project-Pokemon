@@ -353,3 +353,30 @@
    pointer-events: none;
    z-index: 20;
 }
+
+/* Style pour la première carte qui sera recyclée */
+.first-card-to-recycle {
+   border: 3px solid #22c55e !important;
+   /* bordure verte */
+   box-shadow: 0 0 15px rgba(34, 197, 94, 0.6) !important;
+   position: relative;
+}
+
+.first-card-to-recycle::before {
+   content: "♻️";
+   position: absolute;
+   top: -10px;
+   left: -10px;
+   background: #22c55e;
+   color: white;
+   width: 24px;
+   height: 24px;
+   border-radius: 50%;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   font-size: 12px;
+   border: 2px solid white;
+   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+   z-index: 10;
+}
