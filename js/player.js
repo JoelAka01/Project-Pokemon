@@ -1,18 +1,36 @@
-import { Hand } from './hand.js';
-
 export class Player {
    constructor(deckArray, maxHandSize) {
-      this.deck = [...deckArray];
-      this.hand = new Hand(maxHandSize);
-      this.activeCard = null;
+      this.deck = [...deckArray];      // Créer une Hand simple pour contenir les cartes (pas de rendu)
+      this.hand = {
+         cards: [],
+         maxSize: maxHandSize,
+
+         addCard: function (card) {
+            if (this.cards.length < this.maxSize) {
+               this.cards.push(card);
+               return true;
+            } else {
+               return false;
+            }
+         },
+         removeOldestCard: function () {
+            return this.cards.shift();
+         }
+      }; this.activeCard = null;
       this.discardPile = [];
    }
 
    drawCard() {
       if (this.hand.cards.length < this.hand.maxSize && this.deck.length > 0) {
          const card = this.deck.shift();
-         this.hand.addCard(card);
-         return card;
+         const success = this.hand.addCard(card);
+
+         if (success) {
+            return card;
+         } else {
+            // Remettre la carte dans le deck si la main est pleine
+            this.deck.unshift(card);
+         }
       }
       return null;
    }
