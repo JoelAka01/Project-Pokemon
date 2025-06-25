@@ -1,261 +1,107 @@
 export class CardModal {
    constructor() {
-      this.modal = document.getElementById("card-modal");
-      this.closeModalBtn = document.getElementById("close-modal");
-      this.setupModal();
-   }
-
-   setupModal() {
-      this.closeModalBtn.addEventListener("click", () => {
-         this.modal.classList.add("hidden");
-      });
-
-      // Fermer la modale en cliquant en dehors
-      this.modal.addEventListener("click", (e) => {
-         if (e.target === this.modal) {
-            this.modal.classList.add("hidden");
-         }
-      });
+      this.modal = null;
    }
 
    showCardModal(card) {
-      // Récupération des références aux éléments HTML
-      const modalTitle = document.getElementById("modal-title");
-      const modalImg = document.getElementById("modal-img");
-      const modalHp = document.getElementById("modal-hp");
-      const typeBadges = document.getElementById("pokemon-type-badges");
-      const modalDescription = document.getElementById("modal-description");
-      const modalAttacks = document.getElementById("modal-attacks");
-      const modalWeaknesses = document.getElementById("modal-weaknesses");
-      const modalResistances = document.getElementById("modal-resistances");
-      const modalInfo = document.getElementById("modal-info");
-      const modalCardHalo = document.getElementById("modal-card-halo");
-      const modalRarity = document.getElementById("modal-rarity");
 
-      // Sections qui peuvent être masquées si pas de données
-      const weaknessesSection = document.getElementById("modal-weaknesses-section");
-      const resistancesSection = document.getElementById("modal-resistances-section");
-      const attacksSection = document.getElementById("modal-attacks-section");
+      this.hide();
 
-      // Nettoyer les conteneurs
-      typeBadges.innerHTML = "";
-      modalAttacks.innerHTML = "";
-      modalWeaknesses.innerHTML = "";
-      modalResistances.innerHTML = "";
-      modalInfo.innerHTML = "";
+      // Créer le modal directement
+      this.modal = document.createElement("div");
+      this.modal.innerHTML = `
+         <div style="
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center;
+            z-index: 9999;
+         ">
+            <div style="
+               background: white; padding: 20px; border-radius: 10px; text-align: center;
+               max-width: 500px; max-height: 80vh; overflow-y: auto;
+               position: relative;
+            ">
+               <button id="close-modal-btn" style="
+                  position: absolute; top: 10px; right: 15px;
+                  background: #dc2626; color: white; border: none; border-radius: 50%;
+                  width: 30px; height: 30px; cursor: pointer; font-size: 18px;
+               ">×</button>
+               
+               <h2 style="margin: 0 0 15px 0; color: #333;">${card.name}</h2>
+               
+               <img src="${card.imageUrl}" alt="${card.name}" style="
+                  max-width: 100%; height: auto; border-radius: 8px; margin-bottom: 15px;
+               " onerror="this.style.display='none';">
+               
+               <div style="text-align: left;">
+                  <p><strong>HP:</strong> ${card.hp || 'N/A'}</p>
+                  ${card.types ? `<p><strong>Type:</strong> ${card.types.join(', ')}</p>` : ''}
+                  ${this.getAttacksHTML(card.attacks)}
+                  ${this.getWeaknessesHTML(card.weaknesses)}
+               </div>
+            </div>
+         </div>
+      `;
 
-      // Remplir les informations de base
-      modalTitle.textContent = card.name;
-      modalImg.src = card.imageUrl;
-      modalHp.textContent = card.hp;
+      // Ajouter au DOM
+      document.body.appendChild(this.modal);
 
-      // Couleur du halo selon le premier type de la carte
-      if (card.types && card.types.length > 0) {
-         const primaryType = card.types[0];
-         const haloColor = this.getTypeGradient(primaryType);
-         modalCardHalo.className = `absolute -inset-1 ${haloColor} rounded-lg blur opacity-40 group-hover:opacity-100 transition duration-500 group-hover:duration-200`;
-      }
+      // Événements de fermeture
+      const closeBtn = this.modal.querySelector('#close-modal-btn');
+      closeBtn.onclick = () => this.hide();
 
-      // Afficher les badges de type
-      if (card.types && card.types.length > 0) {
-         card.types.forEach(type => {
-            const badge = this.createTypeBadge(type);
-            typeBadges.appendChild(badge);
-         });
-      }
-
-      // Ajouter une description si disponible (optionnel)
-      if (card.description) {
-         modalDescription.textContent = card.description;
-         modalDescription.classList.remove("hidden");
-      } else {
-         modalDescription.classList.add("hidden");
-      }
-
-      // Afficher la rareté (optionnel)
-      if (card.rarity) {
-         modalRarity.textContent = card.rarity;
-         modalRarity.classList.remove("hidden");
-      } else {
-         modalRarity.textContent = "Standard";
-      }
-
-      // Afficher les attaques
-      if (card.attacks && card.attacks.length > 0) {
-         attacksSection.classList.remove("hidden");
-         card.attacks.forEach(attack => {
-            const attackElement = this.createAttackElement(attack);
-            modalAttacks.appendChild(attackElement);
-         });
-      } else {
-         attacksSection.classList.add("hidden");
-      }
-
-      // Afficher les faiblesses
-      if (card.weaknesses && card.weaknesses.length > 0) {
-         weaknessesSection.classList.remove("hidden");
-         card.weaknesses.forEach(weakness => {
-            const weaknessElement = this.createWeaknessElement(weakness);
-            modalWeaknesses.appendChild(weaknessElement);
-         });
-      } else {
-         weaknessesSection.classList.add("hidden");
-      }
-
-      // Afficher les résistances (si disponibles)
-      if (card.resistances && card.resistances.length > 0) {
-         resistancesSection.classList.remove("hidden");
-         card.resistances.forEach(resistance => {
-            const resistanceElement = this.createResistanceElement(resistance);
-            modalResistances.appendChild(resistanceElement);
-         });
-      } else {
-         resistancesSection.classList.add("hidden");
-      }
-
-      // Ajouter un effet de brillance sur l'image
-      const shine = document.createElement("div");
-      shine.className = "card-shine";
-      modalImg.parentNode.appendChild(shine);
-
-      // Afficher la modal
-      this.modal.classList.remove("hidden");
-   }
-
-   // Méthode pour créer un badge de type
-   createTypeBadge(type) {
-      const badge = document.createElement("span");
-      badge.className = `type-badge type-${type}`;
-
-      // Ajouter une icône selon le type
-      const icon = this.getTypeIcon(type);
-      badge.innerHTML = `${icon} ${type}`;
-
-      return badge;
-   }
-
-   // Méthode pour créer un élément d'attaque
-   createAttackElement(attack) {
-      const attackDiv = document.createElement("div");
-      attackDiv.className = "attack-item bg-white/60 rounded-lg p-3 shadow-md border border-orange-200";
-
-      // En-tête de l'attaque avec nom et coût
-      const header = document.createElement("div");
-      header.className = "flex items-center justify-between mb-2";
-
-      const nameDiv = document.createElement("div");
-      nameDiv.className = "font-bold text-lg text-orange-800";
-      nameDiv.textContent = attack.name;
-
-      const costDiv = document.createElement("div");
-      costDiv.className = "flex items-center";
-
-      // Générer les coûts d'énergie
-      if (attack.cost && attack.cost.length > 0) {
-         attack.cost.forEach(energyType => {
-            const energyBadge = document.createElement("span");
-            energyBadge.className = `attack-cost type-${energyType}`;
-            energyBadge.textContent = energyType.charAt(0);
-            costDiv.appendChild(energyBadge);
-         });
-      }
-
-      header.appendChild(nameDiv);
-      header.appendChild(costDiv);
-      attackDiv.appendChild(header);
-
-      // Afficher les dégâts
-      if (attack.damage) {
-         const damageDiv = document.createElement("div");
-         damageDiv.className = "mt-1 text-red-600 font-bold text-lg";
-         damageDiv.textContent = `Dégâts: ${attack.damage}`;
-         attackDiv.appendChild(damageDiv);
-      }
-
-      // Afficher la description de l'attaque si disponible
-      if (attack.text) {
-         const descDiv = document.createElement("p");
-         descDiv.className = "mt-1 text-sm italic text-gray-700";
-         descDiv.textContent = attack.text;
-         attackDiv.appendChild(descDiv);
-      }
-
-      return attackDiv;
-   }
-
-   // Méthode pour créer un élément de faiblesse
-   createWeaknessElement(weakness) {
-      const weaknessDiv = document.createElement("div");
-      weaknessDiv.className = `type-badge type-${weakness.type}`;
-
-      const icon = this.getTypeIcon(weakness.type);
-      weaknessDiv.innerHTML = `${icon} ${weakness.type} ${weakness.value}`;
-
-      return weaknessDiv;
-   }
-
-   // Méthode pour créer un élément de résistance
-   createResistanceElement(resistance) {
-      const resistanceDiv = document.createElement("div");
-      resistanceDiv.className = `type-badge type-${resistance.type}`;
-
-      const icon = this.getTypeIcon(resistance.type);
-      resistanceDiv.innerHTML = `${icon} ${resistance.type} ${resistance.value}`;
-
-      return resistanceDiv;
-   }
-
-   // Obtenir une icône pour un type donné
-   getTypeIcon(type) {
-      const icons = {
-         Fire: "🔥",
-         Water: "💧",
-         Grass: "🌿",
-         Electric: "⚡",
-         Psychic: "🔮",
-         Fighting: "👊",
-         Darkness: "🌑",
-         Metal: "⚙️",
-         Fairy: "✨",
-         Dragon: "🐉",
-         Colorless: "⭐"
+      // Fermer en cliquant sur l'arrière-plan
+      this.modal.onclick = (e) => {
+         if (e.target === this.modal.firstChild) {
+            this.hide();
+         }
       };
 
+      // Fermer avec Escape
+      const handleEscape = (e) => {
+         if (e.key === 'Escape') {
+            this.hide();
+            document.removeEventListener('keydown', handleEscape);
+         }
+      };
+      document.addEventListener('keydown', handleEscape);
+
+      console.log("🎴 Modal de carte affiché pour:", card.name);
+   }
+
+   // Méthode pour compatibilité avec Hand.js
+   getTypeIcon(type) {
+      const icons = {
+         Fire: "🔥", Water: "💧", Grass: "🌿", Electric: "⚡",
+         Psychic: "🔮", Fighting: "👊", Darkness: "🌑", Metal: "⚙️",
+         Fairy: "✨", Dragon: "🐉", Colorless: "⭐"
+      };
       return icons[type] || "❓";
    }
 
-   // Obtenir un gradient de couleur pour un type donné
-   getTypeGradient(type) {
-      const gradients = {
-         Fire: "bg-gradient-to-r from-red-500 to-yellow-500",
-         Water: "bg-gradient-to-r from-blue-500 to-cyan-400",
-         Grass: "bg-gradient-to-r from-green-500 to-lime-400",
-         Electric: "bg-gradient-to-r from-yellow-400 to-amber-500",
-         Psychic: "bg-gradient-to-r from-purple-500 to-pink-400",
-         Fighting: "bg-gradient-to-r from-orange-500 to-red-700",
-         Darkness: "bg-gradient-to-r from-gray-700 to-gray-900",
-         Metal: "bg-gradient-to-r from-gray-400 to-slate-600",
-         Fairy: "bg-gradient-to-r from-pink-400 to-purple-300",
-         Dragon: "bg-gradient-to-r from-indigo-600 to-purple-700",
-         Colorless: "bg-gradient-to-r from-slate-300 to-gray-400"
-      };
+   getAttacksHTML(attacks) {
+      if (!attacks || attacks.length === 0) return '';
 
-      return gradients[type] || "bg-gradient-to-r from-blue-400 to-purple-500";
+      let html = '<div style="margin-top: 15px;"><strong>Attaques:</strong><ul>';
+      attacks.forEach(attack => {
+         html += `<li>${attack.name}${attack.damage ? ` - ${attack.damage} dégâts` : ''}</li>`;
+      });
+      html += '</ul></div>';
+      return html;
    }
 
-   // Méthode pour formater le coût d'énergie
-   formatCost(costs) {
-      if (!costs || costs.length === 0) return "Aucun";
+   getWeaknessesHTML(weaknesses) {
+      if (!weaknesses || weaknesses.length === 0) return '';
 
-      // Compte le nombre de chaque type d'énergie
-      const costCount = costs.reduce((acc, cost) => {
-         acc[cost] = (acc[cost] || 0) + 1;
-         return acc;
-      }, {});
+      let html = '<div style="margin-top: 10px;"><strong>Faiblesses:</strong> ';
+      html += weaknesses.map(w => `${w.type} ${w.value}`).join(', ');
+      html += '</div>';
+      return html;
+   }
 
-      // Formate le résultat
-      return Object.entries(costCount)
-         .map(([type, count]) => `${type} x${count}`)
-         .join(", ");
+   hide() {
+      if (this.modal && this.modal.parentNode) {
+         this.modal.parentNode.removeChild(this.modal);
+         this.modal = null;
+      }
    }
 }

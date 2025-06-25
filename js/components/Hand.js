@@ -99,25 +99,6 @@ export class Hand {
             });
          }
 
-         // Ajouter un badge pour les types de carte si disponibles
-         if (cardObj.types && cardObj.types.length > 0) {
-            const typeIndicator = document.createElement("span");
-            const primaryType = cardObj.types[0];
-            typeIndicator.className = `absolute -top-2 -right-2 w-8 h-8 rounded-full type-${primaryType} border-2 border-white shadow-lg flex items-center justify-center text-xs text-white font-bold`;
-
-            // Utiliser les icônes depuis CardModal si disponible
-            if (this.cardModal && this.cardModal.getTypeIcon) {
-               typeIndicator.innerHTML = this.cardModal.getTypeIcon(primaryType);
-            } else {
-               typeIndicator.textContent = primaryType.substring(0, 1).toUpperCase();
-            }
-
-            typeIndicator.style.animation = "pulse-light 2s infinite";
-            cardWrapper.appendChild(typeIndicator);
-
-            card.setAttribute("title", `Type: ${cardObj.types.join(", ")}`);
-         }
-
          cardWrapper.appendChild(card);
          this.container.appendChild(cardWrapper);
       });
@@ -144,13 +125,7 @@ export class Hand {
          card.className = "w-40 h-auto rounded-lg shadow transition-all duration-300";
          card.id = `opponent-hand-card-${i}`;
 
-         // Ajouter un badge numéroté
-         const cardNumber = document.createElement("span");
-         cardNumber.className = "absolute top-1 left-1 w-5 h-5 rounded-full bg-blue-700 border border-white shadow-sm flex items-center justify-center text-xs text-white font-bold";
-         cardNumber.textContent = (i + 1).toString();
-
          cardWrapper.appendChild(card);
-         cardWrapper.appendChild(cardNumber);
          this.container.appendChild(cardWrapper);
       }
    }

@@ -1,184 +1,81 @@
 export class QuitModal {
-   
    constructor() {
       this.modal = null;
-      this.onConfirm = null;
-      this.onCancel = null;
    }
 
-   /**
-    * Affiche la modal de confirmation pour quitter le jeu
-    * @param {Function} onConfirm - Callback appelé lors de la confirmation
-    * @param {Function} onCancel - Callback appelé lors de l'annulation (optionnel)
-    */
    show(onConfirm, onCancel = null) {
-      this.onConfirm = onConfirm;
-      this.onCancel = onCancel;
+      this.hide(); // Nettoyer l'ancien modal s'il existe
 
-      // Supprimer une éventuelle modal existante
-      this.hide();
-
-      // Créer la modal de confirmation
+      // Créer le modal
       this.modal = document.createElement("div");
-      this.modal.id = "quit-confirmation-modal";
-      this.modal.className = "fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50";
-
       this.modal.innerHTML = `
-         <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-95 hover:scale-100">
-            <!-- Header -->
-            <div class="bg-gradient-to-r from-red-500 to-red-600 text-white p-4 rounded-t-xl">
-               <div class="flex items-center justify-center">
-                  <div class="text-3xl mr-3">🚪</div>
-                  <h2 class="text-xl font-bold">Quitter le jeu</h2>
+         <div style="
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center;
+            z-index: 9999;
+         ">
+            <div style="
+               background: white; padding: 30px; border-radius: 10px; text-align: center;
+               max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            ">
+               <h2 style="margin: 0 0 20px 0; color: #dc2626;">🚪 Quitter le jeu</h2>
+               <p style="margin-bottom: 20px; color: #666;">
+                  Êtes-vous sûr de vouloir quitter ?<br>
+                  <small>Toutes les données seront supprimées.</small>
+               </p>
+               <div style="display: flex; gap: 10px;">
+                  <button id="cancel-quit" style="
+                     flex: 1; padding: 10px; border: none; background: #ccc; 
+                     border-radius: 5px; cursor: pointer;
+                  ">Annuler</button>
+                  <button id="confirm-quit" style="
+                     flex: 1; padding: 10px; border: none; background: #dc2626; color: white;
+                     border-radius: 5px; cursor: pointer;
+                  ">Confirmer</button>
                </div>
-            </div>
-            
-            <!-- Body -->
-            <div class="p-6 text-center">
-               <div class="text-4xl mb-4">⚠️</div>
-               <h3 class="text-lg font-semibold text-gray-800 mb-3">
-                  Êtes-vous sûr de vouloir quitter ?
-               </h3>
-               <p class="text-gray-600 mb-2">
-                  Cette action va supprimer :
-               </p>
-               <ul class="text-sm text-gray-500 mb-4 space-y-1">
-                  <li>• Votre progression actuelle</li>
-                  <li>• Toutes les données sauvegardées</li>
-                  <li>• L'état de la partie en cours</li>
-               </ul>
-               <p class="text-red-600 font-medium text-sm">
-                  Cette action est irréversible !
-               </p>
-            </div>
-            
-            <!-- Footer -->
-            <div class="flex gap-3 p-4 bg-gray-50 rounded-b-xl">
-               <button id="cancel-quit" 
-                       class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-4 rounded-lg transition-all duration-200 hover:scale-105">
-                  🔙 Annuler
-               </button>
-               <button id="confirm-quit" 
-                       class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 hover:scale-105">
-                  ✅ Confirmer
-               </button>
             </div>
          </div>
       `;
 
-      // Animation d'entrée
-      this.modal.style.opacity = "0";
+      // Ajouter au DOM
       document.body.appendChild(this.modal);
 
-      // Déclencher l'animation
-      setTimeout(() => {
-         this.modal.style.opacity = "1";
-         this.modal.querySelector('.bg-white').style.transform = "scale(1)";
-      }, 10);
-
-      // Attacher les événements
-      this.attachEvents();
-   }
-
-   /**
-    * Attache les événements à la modal
-    */
-   attachEvents() {
-      if (!this.modal) return;
-
-      const cancelBtn = this.modal.querySelector('#cancel-quit');
-      const confirmBtn = this.modal.querySelector('#confirm-quit');
-
-      // Bouton Annuler
-      cancelBtn.onclick = () => {
-         this.handleCancel();
+      // Événements
+      this.modal.querySelector('#cancel-quit').onclick = () => {
+         this.hide();
+         if (onCancel) onCancel();
       };
 
-      // Bouton Confirmer
-      confirmBtn.onclick = () => {
-         this.handleConfirm();
+      this.modal.querySelector('#confirm-quit').onclick = () => {
+         this.hide();
+         if (onConfirm) onConfirm();
       };
 
-      // Fermer avec Escape
-      this.handleEscape = (e) => {
+      // Fermer avec Escape ou clic extérieur
+      const handleEscape = (e) => {
          if (e.key === 'Escape') {
-            this.handleCancel();
+            this.hide();
+            document.removeEventListener('keydown', handleEscape);
+            if (onCancel) onCancel();
          }
       };
-      document.addEventListener('keydown', this.handleEscape);
+      document.addEventListener('keydown', handleEscape);
 
-      // Fermer en cliquant à l'extérieur
       this.modal.onclick = (e) => {
-         if (e.target === this.modal) {
-            this.handleCancel();
+         if (e.target === this.modal.firstChild) {
+            this.hide();
+            if (onCancel) onCancel();
          }
       };
    }
 
-   /**
-    * Gère l'annulation
-    */
-   handleCancel() {
-      this.hide();
-      if (this.onCancel && typeof this.onCancel === 'function') {
-         this.onCancel();
-      }
-   }
-
-   /**
-    * Gère la confirmation
-    */
-   handleConfirm() {
-      this.hide();
-      // Attendre que la modal se ferme avant d'exécuter la confirmation
-      setTimeout(() => {
-         if (this.onConfirm && typeof this.onConfirm === 'function') {
-            this.onConfirm();
-         }
-      }, 300);
-   }
-
-   /**
-    * Cache et supprime la modal avec animation
-    */
    hide() {
-      if (!this.modal) return;
-
-      // Supprimer l'événement Escape
-      if (this.handleEscape) {
-         document.removeEventListener('keydown', this.handleEscape);
-         this.handleEscape = null;
-      }
-
-      // Animation de sortie
-      this.modal.style.opacity = "0";
-      const whiteDiv = this.modal.querySelector('.bg-white');
-      if (whiteDiv) {
-         whiteDiv.style.transform = "scale(0.95)";
-      }
-
-      // Supprimer la modal après l'animation
-      setTimeout(() => {
-         if (this.modal && this.modal.parentNode) {
-            this.modal.parentNode.removeChild(this.modal);
-         }
+      if (this.modal && this.modal.parentNode) {
+         this.modal.parentNode.removeChild(this.modal);
          this.modal = null;
-         this.onConfirm = null;
-         this.onCancel = null;
-      }, 300);
+      }
    }
 
-   /**
-    * Vérifie si la modal est actuellement affichée
-    * @returns {boolean}
-    */
-   isVisible() {
-      return this.modal !== null && document.body.contains(this.modal);
-   }
-
-   /**
-    * Nettoie complètement le composant
-    */
    destroy() {
       this.hide();
    }
