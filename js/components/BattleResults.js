@@ -1,5 +1,4 @@
 export class BattleResults {
-   
    constructor(container) {
       this.container = container;
    }

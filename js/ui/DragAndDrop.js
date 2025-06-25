@@ -21,19 +21,26 @@ export class DragAndDropManager {
     * @param {...HTMLElement} elements - Les éléments qui peuvent recevoir des drops
     */
    initializeDropZones(...elements) {
+      console.log("🎯 Initialisation des zones de dépôt:", elements.map(el => el?.id || el?.className));
+      
       elements.forEach(el => {
          if (el && !this.dropTargets.has(el)) {
+            console.log(`➕ Ajout de la zone de dépôt: ${el.id || el.className}`);
             el.addEventListener("dragover", this.handleDragOver);
             el.addEventListener("drop", this.handleDrop);
             this.dropTargets.add(el);
-
+            
             // Ajouter un style visuel pour indiquer que c'est une zone de dépôt
             el.style.cursor = "pointer";
             el.setAttribute("data-drop-zone", "true");
          } else if (!el) {
             console.warn("⚠️ Élément null ou undefined passé à initializeDropZones");
+         } else {
+            console.log(`✅ Zone de dépôt déjà configurée: ${el.id || el.className}`);
          }
       });
+      
+      console.log(`🎯 Total des zones de dépôt configurées: ${this.dropTargets.size}`);
    }
 
    /**
@@ -80,7 +87,7 @@ export class DragAndDropManager {
    handleDragOver(ev) {
       ev.preventDefault(); // nécessaire pour autoriser le drop
       ev.dataTransfer.dropEffect = "move";
-
+      
       // Ajouter un feedback visuel
       const target = ev.currentTarget;
       if (target && !target.classList.contains("drag-over")) {
@@ -88,6 +95,8 @@ export class DragAndDropManager {
          target.style.backgroundColor = "rgba(59, 130, 246, 0.1)";
          target.style.border = "2px dashed #3b82f6";
          target.style.transition = "all 0.2s ease";
+         
+         console.log("📍 Survol de zone de dépôt:", target.id || target.className);
       }
 
       // Nettoyer les autres zones de dépôt
@@ -107,18 +116,25 @@ export class DragAndDropManager {
       const data = ev.dataTransfer.getData("text/plain");
       const targetId = ev.currentTarget.id;
       const targetClassName = ev.currentTarget.className;
-
+      
       // Nettoyer le feedback visuel
       const target = ev.currentTarget;
       if (target) {
          target.classList.remove("drag-over");
          target.style.backgroundColor = "";
          target.style.border = "";
-      } console.log("🎯 Drop event:", {
-         data,
-         targetId,
-         target: target?.tagName
-      });      // Vérifier que la cible est bien une zone de dépôt enregistrée
+      }
+      
+      console.log("🎯 Drop event détaillé:", { 
+         data, 
+         targetId, 
+         targetClassName, 
+         target: target?.tagName,
+         targetRect: target?.getBoundingClientRect(),
+         dropZoneCount: this.dropTargets.size
+      });
+
+      // Vérifier que la cible est bien une zone de dépôt enregistrée
       if (!this.dropTargets.has(target)) {
          console.warn("⚠️ Tentative de drop sur une zone non enregistrée:", targetId);
          return;
@@ -139,7 +155,8 @@ export class DragAndDropManager {
    /**
     * Gère le drop d'une carte de la pioche
     * @param {string} targetId - L'ID de l'élément cible
-    */   handleDeckCardDrop(targetId) {
+    */
+   handleDeckCardDrop(targetId) {
       if (targetId === "hand") {
          const card = this.game.attemptDrawCard();
          if (card) {
@@ -161,8 +178,10 @@ export class DragAndDropManager {
     * Gère le drop d'une carte de la main
     * @param {string} data - Les données de la carte (format: "hand-card-{index}")
     * @param {string} targetId - L'ID de l'élément cible
-    */   handleHandCardDrop(data, targetId) {
+    */
+   handleHandCardDrop(data, targetId) {
       const index = parseInt(data.split("-")[2]);
+      console.log("Card index:", index);
 
       if (!this.validateCardIndex(index)) {
          return;
@@ -203,8 +222,11 @@ export class DragAndDropManager {
     * Gère le drop d'une carte vers la zone active du joueur
     * @param {number} index - L'index de la carte dans la main
     * @param {Object} card - La carte à déplacer
-    */   handleDropToPlayerActive(index, card) {
+    */
+   handleDropToPlayerActive(index, card) {
       if (!this.game.player.activeCard) {
+         console.log("Déplacement de la carte vers la zone active");
+
          // Déplacer la carte de la main vers la zone active
          this.game.player.activeCard = this.game.player.hand.cards.splice(index, 1)[0];
          this.game.playerActiveZone.setActiveCard(this.game.player.activeCard);
@@ -308,7 +330,7 @@ export class DragAndDropManager {
          ev.dataTransfer.effectAllowed = "move";
          element.classList.add("dragging");
          this.draggedData = { type: "text/plain", data: dataValue };
-
+         
          console.log(`🎮 Drag started pour:`, { dataValue, element: element.tagName });
       };
 

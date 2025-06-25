@@ -127,8 +127,9 @@
          </div>
 
          <!-- Contenu principal en flex -->
-         <div class="flex flex-col lg:flex-row gap-6"> <!-- Image de la carte avec effet spécial -->
-            <div class="relative group flex-shrink-0 overflow-visible">
+         <div class="flex flex-col lg:flex-row gap-6">
+            <!-- Image de la carte avec effet spécial -->
+            <div class="relative group flex-shrink-0">
                <!-- Effet de halo dynamique -->
                <div id="modal-card-halo"
                   class="absolute -inset-1 bg-gradient-to-r from-yellow-400 to-blue-500 rounded-lg blur opacity-40 group-hover:opacity-100 transition duration-500 group-hover:duration-200">
@@ -141,7 +142,7 @@
 
                <!-- Indicateur de rareté -->
                <div id="modal-rarity"
-                  class="absolute bottom-6 right-6 bg-gradient-to-r from-purple-600 to-blue-500 text-white px-2 py-1 rounded-full text-xs font-bold z-30 shadow-lg">
+                  class="absolute bottom-2 right-2 bg-gradient-to-r from-purple-600 to-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold z-20 shadow-lg">
                   Rare
                </div>
             </div>

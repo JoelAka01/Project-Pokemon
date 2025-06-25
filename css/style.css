@@ -380,14 +380,3 @@
    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
    z-index: 10;
 }
-
-/* Conteneur pour les cartes avec badges visibles */
-.card-container {
-   position: relative;
-   overflow: visible;
-   z-index: 1;
-}
-
-.card-container:hover {
-   z-index: 10;
-}

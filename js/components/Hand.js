@@ -1,4 +1,5 @@
 export class Hand {
+   
    constructor(container, isPlayer = true, cardModal = null, dragManager = null) {
       this.container = container;
       this.isPlayer = isPlayer;
@@ -6,13 +7,10 @@ export class Hand {
       this.dragManager = dragManager;
       this.cards = [];
    }
+
+
    // Nettoie le conteneur
    clear() {
-      if (!this.container) {
-         console.error("❌ Container inexistant pour clear()");
-         return;
-      }
-
       while (this.container.firstChild) {
          this.container.removeChild(this.container.firstChild);
       }
@@ -39,26 +37,30 @@ export class Hand {
       return this.cards.shift();
    }
 
+
    // Rend les cartes du joueur (visible)
    renderPlayerHand() {
+      console.log("🎨 Rendu des cartes du joueur...");
+
       if (!Array.isArray(this.cards)) {
          console.error("❌ Données de la main invalides");
          return;
       }
 
       this.clear();
-
-      if (this.cards.length === 0) {
-         return;
-      }
+      console.log(`📋 Cartes à afficher: ${this.cards.length}`);
 
       this.cards.forEach((cardObj, index) => {
+         console.log(`🃏 Rendu carte ${index + 1}:`, cardObj.name, cardObj.imageUrl);
+
          if (!cardObj || !cardObj.imageUrl || !cardObj.name) {
             console.warn(`⚠️ Carte ${index} invalide:`, cardObj);
             return;
-         }         // Créer un wrapper pour la carte
+         }
+
+         // Créer un wrapper pour la carte
          const cardWrapper = document.createElement("div");
-         cardWrapper.className = "card-container relative overflow-visible";
+         cardWrapper.className = "card-container relative";
 
          // Créer l'élément image de la carte
          const card = document.createElement("img");
@@ -69,14 +71,14 @@ export class Hand {
          // Ajouter une classe spéciale pour la première carte qui sera recyclée
          card.className = index === 0
             ? "w-40 h-auto rounded-lg shadow cursor-pointer pokemon-card transition-all duration-300 first-card-to-recycle"
-            : "w-40 h-auto rounded-lg shadow cursor-pointer pokemon-card transition-all duration-300";         // Gestion d'erreur de chargement d'image
+            : "w-40 h-auto rounded-lg shadow cursor-pointer pokemon-card transition-all duration-300";
+
+         // Gestion d'erreur de chargement d'image
          card.onerror = () => {
             console.error(`❌ Erreur de chargement de l'image: ${cardObj.imageUrl}`);
             card.src = "img/back-card.jpg";
             card.alt = "Erreur de chargement";
-         };
-
-         // Ajouter les événements
+         };         // Ajouter les événements
          if (this.cardModal) {
             card.addEventListener("click", () => this.cardModal.showCardModal(cardObj));
          }
@@ -95,11 +97,13 @@ export class Hand {
             card.addEventListener("dragend", () => {
                card.classList.remove("dragging");
             });
-         }         // Ajouter un badge pour les types de carte si disponibles
+         }
+
+         // Ajouter un badge pour les types de carte si disponibles
          if (cardObj.types && cardObj.types.length > 0) {
             const typeIndicator = document.createElement("span");
             const primaryType = cardObj.types[0];
-            typeIndicator.className = `absolute top-1 right-1 w-6 h-6 rounded-full type-${primaryType} border-2 border-white shadow-lg flex items-center justify-center text-xs text-white font-bold z-10`;
+            typeIndicator.className = `absolute -top-2 -right-2 w-8 h-8 rounded-full type-${primaryType} border-2 border-white shadow-lg flex items-center justify-center text-xs text-white font-bold`;
 
             // Utiliser les icônes depuis CardModal si disponible
             if (this.cardModal && this.cardModal.getTypeIcon) {
@@ -109,12 +113,16 @@ export class Hand {
             }
 
             typeIndicator.style.animation = "pulse-light 2s infinite";
-            cardWrapper.appendChild(typeIndicator); card.setAttribute("title", `Type: ${cardObj.types.join(", ")}`);
+            cardWrapper.appendChild(typeIndicator);
+
+            card.setAttribute("title", `Type: ${cardObj.types.join(", ")}`);
          }
 
          cardWrapper.appendChild(card);
          this.container.appendChild(cardWrapper);
       });
+
+      console.log(`✅ Rendu terminé: ${this.container.children.length} cartes affichées`);
    }
 
 
