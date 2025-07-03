@@ -31,16 +31,6 @@ export class LocalStorageManager {
                activeCard: gameData.opponent.activeCard,
                discardPile: gameData.opponent.discardPile
             },
-            battleSystem: gameData.battleSystem ? {
-               playerHP: gameData.battleSystem.playerHP,
-               opponentHP: gameData.battleSystem.opponentHP,
-               maxPlayerHP: gameData.battleSystem.maxPlayerHP,
-               maxOpponentHP: gameData.battleSystem.maxOpponentHP,
-               selectedPlayerAttack: gameData.battleSystem.selectedPlayerAttack,
-               selectedOpponentAttack: gameData.battleSystem.selectedOpponentAttack,
-               isInBattle: gameData.battleSystem.isInBattle,
-               battlePhase: gameData.battleSystem.battlePhase
-            } : null,
             canDraw: gameData.canDraw,
             timeLeft: gameData.timeLeft,
             timestamp: Date.now()

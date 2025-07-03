@@ -255,11 +255,23 @@ export class DragAndDropManager {
     * Fait jouer automatiquement une carte à l'adversaire
     */
    autoPlayOpponentCard() {
+      console.log("🤖 autoPlayOpponentCard appelé");
+      console.log("🤖 Carte active adversaire:", this.game.opponent.activeCard);
+      console.log("🤖 Cartes en main adversaire:", this.game.opponent.hand.cards.length);
+      
       if (!this.game.opponent.activeCard && this.game.opponent.hand.cards.length > 0) {
          const randomIndex = Math.floor(Math.random() * this.game.opponent.hand.cards.length);
-         this.game.opponent.activeCard = this.game.opponent.hand.cards.splice(randomIndex, 1)[0];
-         this.game.opponentActiveZone.setActiveCard(this.game.opponent.activeCard);
+         const selectedCard = this.game.opponent.hand.cards.splice(randomIndex, 1)[0];
+         this.game.opponent.activeCard = selectedCard;
+         this.game.opponentActiveZone.setActiveCard(selectedCard);
          this.game.renderOpponentCards();
+         
+         console.log("🤖 Carte placée automatiquement:", selectedCard.name);
+         console.log("🤖 Nouvelle carte active adversaire:", this.game.opponent.activeCard);
+      } else {
+         console.log("🤖 Conditions non remplies pour placement automatique");
+         console.log("🤖 activeCard null?", !this.game.opponent.activeCard);
+         console.log("🤖 cartes disponibles?", this.game.opponent.hand.cards.length > 0);
       }
    }
 

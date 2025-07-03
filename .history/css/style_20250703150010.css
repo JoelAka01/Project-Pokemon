@@ -395,8 +395,7 @@
 }
 
 /* Styles pour les zones de défausse */
-#player-discard,
-#opponent-discard {
+#player-discard, #opponent-discard {
    min-width: 80px;
    min-height: 112px;
    padding: 8px;
@@ -406,8 +405,7 @@
    transition: all 0.3s ease;
 }
 
-#player-discard:hover,
-#opponent-discard:hover {
+#player-discard:hover, #opponent-discard:hover {
    background: rgba(139, 69, 19, 0.3);
    border-color: rgba(220, 38, 38, 0.8);
    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);

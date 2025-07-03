@@ -22,14 +22,14 @@ export class DragAndDropManager {
     */
    initializeDropZones(...elements) {
       console.log("🎯 Initialisation des zones de dépôt:", elements.map(el => el?.id || el?.className));
-
+      
       elements.forEach(el => {
          if (el && !this.dropTargets.has(el)) {
             console.log(`➕ Ajout de la zone de dépôt: ${el.id || el.className}`);
             el.addEventListener("dragover", this.handleDragOver);
             el.addEventListener("drop", this.handleDrop);
             this.dropTargets.add(el);
-
+            
             // Ajouter un style visuel pour indiquer que c'est une zone de dépôt
             el.style.cursor = "pointer";
             el.setAttribute("data-drop-zone", "true");
@@ -39,7 +39,7 @@ export class DragAndDropManager {
             console.log(`✅ Zone de dépôt déjà configurée: ${el.id || el.className}`);
          }
       });
-
+      
       console.log(`🎯 Total des zones de dépôt configurées: ${this.dropTargets.size}`);
    }
 
@@ -87,7 +87,7 @@ export class DragAndDropManager {
    handleDragOver(ev) {
       ev.preventDefault(); // nécessaire pour autoriser le drop
       ev.dataTransfer.dropEffect = "move";
-
+      
       // Ajouter un feedback visuel
       const target = ev.currentTarget;
       if (target && !target.classList.contains("drag-over")) {
@@ -95,7 +95,7 @@ export class DragAndDropManager {
          target.style.backgroundColor = "rgba(59, 130, 246, 0.1)";
          target.style.border = "2px dashed #3b82f6";
          target.style.transition = "all 0.2s ease";
-
+         
          console.log("📍 Survol de zone de dépôt:", target.id || target.className);
       }
 
@@ -116,7 +116,7 @@ export class DragAndDropManager {
       const data = ev.dataTransfer.getData("text/plain");
       const targetId = ev.currentTarget.id;
       const targetClassName = ev.currentTarget.className;
-
+      
       // Nettoyer le feedback visuel
       const target = ev.currentTarget;
       if (target) {
@@ -124,11 +124,11 @@ export class DragAndDropManager {
          target.style.backgroundColor = "";
          target.style.border = "";
       }
-
-      console.log("🎯 Drop event détaillé:", {
-         data,
-         targetId,
-         targetClassName,
+      
+      console.log("🎯 Drop event détaillé:", { 
+         data, 
+         targetId, 
+         targetClassName, 
          target: target?.tagName,
          targetRect: target?.getBoundingClientRect(),
          dropZoneCount: this.dropTargets.size
@@ -315,7 +315,7 @@ export class DragAndDropManager {
          ev.dataTransfer.effectAllowed = "move";
          element.classList.add("dragging");
          this.draggedData = { type: "text/plain", data: dataValue };
-
+         
          console.log(`🎮 Drag started pour:`, { dataValue, element: element.tagName });
       };
 

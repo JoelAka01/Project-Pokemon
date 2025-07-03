@@ -333,7 +333,6 @@ export class Game {
          }
       } else {
          console.log("🎮 Jeu chargé depuis localStorage");
-         this.showTutorialMessage("Ton jeu précédent a été restauré! 🎮 Continue de jouer où tu t'étais arrêté.");
       }
 
       this.finishGameInitialization();

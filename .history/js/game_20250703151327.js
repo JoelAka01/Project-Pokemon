@@ -330,6 +330,8 @@ export class Game {
 
          if (hadCorruptedData) {
             this.showStorageErrorMessage();
+         } else {
+            this.showTutorialMessage("Astuce: Quand tu tires une carte de ta pioche pour la mettre dans ta main, la première carte de ta main retourne au bas de la pioche! ♻️");
          }
       } else {
          console.log("🎮 Jeu chargé depuis localStorage");

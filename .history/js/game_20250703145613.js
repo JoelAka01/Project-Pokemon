@@ -74,7 +74,7 @@ export class Game {
       this.opponentHand = new Hand(this.opponentHandContainer, false, this.cardModal, this.dragAndDrop);
       this.playerDeck = new Deck(this.deckContainer, this.player.deck, this.dragAndDrop.createDragStartHandler());
       this.opponentDeck = new Deck(this.opponentDeckContainer, this.opponent.deck);
-
+      
       // Composants de défausse
       this.playerDiscard = new DiscardPile('player-discard', 'player', this.cardModal);
       this.opponentDiscard = new DiscardPile('opponent-discard', 'opponent', this.cardModal);
@@ -239,12 +239,12 @@ export class Game {
       const opponentCard = this.opponent.activeCard;
 
       if (!playerCard || !opponentCard) {
-         console.log("🎯 Cartes actives en attente...");
+         this.battleResults.showVersusState();
          return;
       }
 
-      console.log("⚔️ Affichage des résultats de combat via BattleSystem");
-      // Les résultats sont maintenant gérés par le BattleSystem
+      this.battleResults.displayBattleResults(playerCard, opponentCard);
+      this.battleResults.animateResult();
    }
 
    // === MÉTHODES DE MODAL ET UI ===
@@ -330,6 +330,8 @@ export class Game {
 
          if (hadCorruptedData) {
             this.showStorageErrorMessage();
+         } else {
+            this.showTutorialMessage("Astuce: Quand tu tires une carte de ta pioche pour la mettre dans ta main, la première carte de ta main retourne au bas de la pioche! ♻️");
          }
       } else {
          console.log("🎮 Jeu chargé depuis localStorage");

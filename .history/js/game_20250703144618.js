@@ -1,7 +1,7 @@
 import { Player } from './player.js';
 import { DragAndDropManager } from './ui/index.js';
 import { LocalStorageManager } from './localStorage/index.js';
-import { Hand, Deck, ActiveCardZone, Timer, CardModal, QuitModal, DiscardPile, BattleSystem } from './components/index.js';
+import { Hand, Deck, BattleResults, ActiveCardZone, Timer, CardModal, QuitModal } from './components/index.js';
 
 export class Game {
    constructor(playerDeck, opponentDeck, maxHandSize = 5) {
@@ -75,12 +75,8 @@ export class Game {
       this.playerDeck = new Deck(this.deckContainer, this.player.deck, this.dragAndDrop.createDragStartHandler());
       this.opponentDeck = new Deck(this.opponentDeckContainer, this.opponent.deck);
 
-      // Composants de défausse
-      this.playerDiscard = new DiscardPile('player-discard', 'player', this.cardModal);
-      this.opponentDiscard = new DiscardPile('opponent-discard', 'opponent', this.cardModal);
-
       // Composants de bataille
-      this.battleSystem = new BattleSystem(this);
+      this.battleResults = new BattleResults(this.results);
       this.playerActiveZone = new ActiveCardZone(this.playerActive, this.cardModal, true); // Zone joueur
       this.opponentActiveZone = new ActiveCardZone(this.opponentActive, this.cardModal, false); // Zone adversaire
 
@@ -216,12 +212,6 @@ export class Game {
    renderCards() {
       this.renderPlayerCards();
       this.renderOpponentCards();
-      this.renderDiscardPiles();
-   }
-
-   renderDiscardPiles() {
-      this.playerDiscard.setCards(this.player.discardPile);
-      this.opponentDiscard.setCards(this.opponent.discardPile);
    }
 
    renderActiveCard(container, card) {
@@ -239,12 +229,12 @@ export class Game {
       const opponentCard = this.opponent.activeCard;
 
       if (!playerCard || !opponentCard) {
-         console.log("🎯 Cartes actives en attente...");
+         this.battleResults.showVersusState();
          return;
       }
 
-      console.log("⚔️ Affichage des résultats de combat via BattleSystem");
-      // Les résultats sont maintenant gérés par le BattleSystem
+      this.battleResults.displayBattleResults(playerCard, opponentCard);
+      this.battleResults.animateResult();
    }
 
    // === MÉTHODES DE MODAL ET UI ===
@@ -330,6 +320,8 @@ export class Game {
 
          if (hadCorruptedData) {
             this.showStorageErrorMessage();
+         } else {
+            this.showTutorialMessage("Astuce: Quand tu tires une carte de ta pioche pour la mettre dans ta main, la première carte de ta main retourne au bas de la pioche! ♻️");
          }
       } else {
          console.log("🎮 Jeu chargé depuis localStorage");
@@ -403,7 +395,6 @@ export class Game {
       const gameData = {
          player: this.player,
          opponent: this.opponent,
-         battleSystem: this.battleSystem,
          canDraw: this.canDraw,
          timeLeft: this.timer.getTimeLeft(),
          timerState: this.timer.getState()
@@ -439,18 +430,6 @@ export class Game {
       this.opponent.hand.cards = gameState.opponent.hand;
       this.opponent.activeCard = gameState.opponent.activeCard;
       this.opponent.discardPile = gameState.opponent.discardPile || [];
-
-      // Restaurer l'état du système de bataille
-      if (gameState.battleSystem && this.battleSystem) {
-         this.battleSystem.playerHP = gameState.battleSystem.playerHP;
-         this.battleSystem.opponentHP = gameState.battleSystem.opponentHP;
-         this.battleSystem.maxPlayerHP = gameState.battleSystem.maxPlayerHP;
-         this.battleSystem.maxOpponentHP = gameState.battleSystem.maxOpponentHP;
-         this.battleSystem.selectedPlayerAttack = gameState.battleSystem.selectedPlayerAttack;
-         this.battleSystem.selectedOpponentAttack = gameState.battleSystem.selectedOpponentAttack;
-         this.battleSystem.isInBattle = gameState.battleSystem.isInBattle || false;
-         this.battleSystem.battlePhase = gameState.battleSystem.battlePhase;
-      }
    }
 
    restoreGameState(gameState) {

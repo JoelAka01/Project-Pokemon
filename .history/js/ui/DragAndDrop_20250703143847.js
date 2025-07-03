@@ -22,14 +22,14 @@ export class DragAndDropManager {
     */
    initializeDropZones(...elements) {
       console.log("🎯 Initialisation des zones de dépôt:", elements.map(el => el?.id || el?.className));
-
+      
       elements.forEach(el => {
          if (el && !this.dropTargets.has(el)) {
             console.log(`➕ Ajout de la zone de dépôt: ${el.id || el.className}`);
             el.addEventListener("dragover", this.handleDragOver);
             el.addEventListener("drop", this.handleDrop);
             this.dropTargets.add(el);
-
+            
             // Ajouter un style visuel pour indiquer que c'est une zone de dépôt
             el.style.cursor = "pointer";
             el.setAttribute("data-drop-zone", "true");
@@ -39,7 +39,7 @@ export class DragAndDropManager {
             console.log(`✅ Zone de dépôt déjà configurée: ${el.id || el.className}`);
          }
       });
-
+      
       console.log(`🎯 Total des zones de dépôt configurées: ${this.dropTargets.size}`);
    }
 
@@ -87,7 +87,7 @@ export class DragAndDropManager {
    handleDragOver(ev) {
       ev.preventDefault(); // nécessaire pour autoriser le drop
       ev.dataTransfer.dropEffect = "move";
-
+      
       // Ajouter un feedback visuel
       const target = ev.currentTarget;
       if (target && !target.classList.contains("drag-over")) {
@@ -95,7 +95,7 @@ export class DragAndDropManager {
          target.style.backgroundColor = "rgba(59, 130, 246, 0.1)";
          target.style.border = "2px dashed #3b82f6";
          target.style.transition = "all 0.2s ease";
-
+         
          console.log("📍 Survol de zone de dépôt:", target.id || target.className);
       }
 
@@ -116,7 +116,7 @@ export class DragAndDropManager {
       const data = ev.dataTransfer.getData("text/plain");
       const targetId = ev.currentTarget.id;
       const targetClassName = ev.currentTarget.className;
-
+      
       // Nettoyer le feedback visuel
       const target = ev.currentTarget;
       if (target) {
@@ -124,11 +124,11 @@ export class DragAndDropManager {
          target.style.backgroundColor = "";
          target.style.border = "";
       }
-
-      console.log("🎯 Drop event détaillé:", {
-         data,
-         targetId,
-         targetClassName,
+      
+      console.log("🎯 Drop event détaillé:", { 
+         data, 
+         targetId, 
+         targetClassName, 
          target: target?.tagName,
          targetRect: target?.getBoundingClientRect(),
          dropZoneCount: this.dropTargets.size
@@ -237,9 +237,6 @@ export class DragAndDropManager {
 
          this.game.renderCards();
 
-         // Déclencher automatiquement le modal de choix d'attaque
-         this.triggerAttackChoice();
-
          // Afficher les résultats si les deux joueurs ont une carte active
          if (this.game.opponent.activeCard) {
             this.game.displayResults();
@@ -248,6 +245,25 @@ export class DragAndDropManager {
          this.game.saveGameState();
       } else {
          this.showAlert("Tu as déjà un Pokémon actif !");
+      }
+   }
+
+   /**
+    * Gère le drop d'une carte vers la zone active de l'adversaire
+    * @param {number} index - L'index de la carte dans la main
+    * @param {Object} card - La carte à déplacer
+    */
+   handleDropToOpponentActive(index, card) {
+      if (!this.game.opponent.activeCard) {
+         this.game.opponent.activeCard = this.game.player.hand.cards.splice(index, 1)[0];
+         this.game.opponentActiveZone.setActiveCard(this.game.opponent.activeCard);
+         this.game.renderCards();
+
+         if (this.game.player.activeCard) {
+            this.game.displayResults();
+         }
+      } else {
+         this.showAlert("L'adversaire a déjà un Pokémon actif !");
       }
    }
 
@@ -315,7 +331,7 @@ export class DragAndDropManager {
          ev.dataTransfer.effectAllowed = "move";
          element.classList.add("dragging");
          this.draggedData = { type: "text/plain", data: dataValue };
-
+         
          console.log(`🎮 Drag started pour:`, { dataValue, element: element.tagName });
       };
 
@@ -335,25 +351,5 @@ export class DragAndDropManager {
       // Ajouter les nouveaux événements
       element.addEventListener("dragstart", dragStartHandler);
       element.addEventListener("dragend", dragEndHandler);
-   }
-
-   /**
-    * Déclenche le modal de choix d'attaque quand une carte est posée
-    */
-   triggerAttackChoice() {
-      // Attendre un court délai pour que l'interface soit mise à jour
-      setTimeout(() => {
-         const playerCard = this.game.player.activeCard;
-         const opponentCard = this.game.opponent.activeCard;
-
-         // Si les deux joueurs ont une carte active, déclencher le choix d'attaque
-         if (playerCard && opponentCard && this.game.battleSystem) {
-            this.game.battleSystem.showAttackChoiceModal(playerCard, true);
-         } else if (playerCard && this.game.battleSystem) {
-            // Si seul le joueur a une carte, lui permettre de choisir son attaque
-            // L'adversaire choisira automatiquement quand il aura une carte
-            this.game.battleSystem.showAttackChoiceModal(playerCard, true);
-         }
-      }, 100);
    }
 }
