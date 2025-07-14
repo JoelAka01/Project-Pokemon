@@ -7,7 +7,6 @@ export class CardModal {
 
       this.hide();
 
-      // Créer le modal directement
       this.modal = document.createElement("div");
       this.modal.innerHTML = `
          <div style="
@@ -42,14 +41,11 @@ export class CardModal {
          </div>
       `;
 
-      // Ajouter au DOM
       document.body.appendChild(this.modal);
 
-      // Événements de fermeture
       const closeBtn = this.modal.querySelector('#close-modal-btn');
       closeBtn.onclick = () => this.hide();
 
-      // Fermer en cliquant sur l'arrière-plan
       this.modal.onclick = (e) => {
          if (e.target === this.modal || (this.modal && this.modal.firstChild && e.target === this.modal.firstChild)) {
             this.hide();
@@ -64,8 +60,6 @@ export class CardModal {
          }
       };
       document.addEventListener('keydown', handleEscape);
-
-      console.log("🎴 Modal de carte affiché pour:", card.name);
    }
 
    // Méthode pour compatibilité avec Hand.js

@@ -4,9 +4,8 @@ export class QuitModal {
    }
 
    show(onConfirm, onCancel = null) {
-      this.hide(); // Nettoyer l'ancien modal s'il existe
+      this.hide();
 
-      // Créer le modal
       this.modal = document.createElement("div");
       this.modal.innerHTML = `
          <div style="
@@ -37,10 +36,8 @@ export class QuitModal {
          </div>
       `;
 
-      // Ajouter au DOM
       document.body.appendChild(this.modal);
 
-      // Événements
       const cancelBtn = this.modal.querySelector('#cancel-quit');
       const confirmBtn = this.modal.querySelector('#confirm-quit');
 
@@ -58,7 +55,6 @@ export class QuitModal {
          };
       }
 
-      // Fermer avec Escape ou clic extérieur
       const handleEscape = (e) => {
          if (e.key === 'Escape') {
             this.hide();

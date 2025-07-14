@@ -1,6 +1,4 @@
-export class Hand 
-{
-   
+export class Hand {
    constructor(container, isPlayer = true, cardModal = null, dragManager = null) {
       this.container = container;
       this.isPlayer = isPlayer;
@@ -9,22 +7,16 @@ export class Hand
       this.cards = [];
    }
 
-
-   // Nettoie le conteneur
    clear() {
       while (this.container.firstChild) {
          this.container.removeChild(this.container.firstChild);
       }
    }
 
-
-   // Ajoute une carte à la main
    addCard(card) {
       this.cards.push(card);
    }
 
-
-   // Retire une carte de la main par index
    removeCard(index) {
       if (index >= 0 && index < this.cards.length) {
          return this.cards.splice(index, 1)[0];
@@ -32,129 +24,138 @@ export class Hand
       return null;
    }
 
-
-   // Retire la première carte de la main
    removeFirstCard() {
       return this.cards.shift();
    }
 
 
-   // Rend les cartes du joueur (visible)
-   renderPlayerHand() {
-      console.log("🎨 Rendu des cartes du joueur...");
+   renderPlayer() {
+      console.log("👤 === RENDU MAIN JOUEUR ===");
+      console.log(`🃏 Nombre de cartes: ${this.cards.length}`);
+      console.log(`📦 Container:`, this.container);
 
       if (!Array.isArray(this.cards)) {
-         console.error("❌ Données de la main invalides");
+         console.error("❌ this.cards n'est pas un tableau");
          return;
       }
 
       this.clear();
-      console.log(`📋 Cartes à afficher: ${this.cards.length}`);
 
       this.cards.forEach((cardObj, index) => {
-         console.log(`🃏 Rendu carte ${index + 1}:`, cardObj.name, cardObj.imageUrl);
-
+         console.log(`🎴 Rendu carte ${index + 1}: ${cardObj.name}`);
          if (!cardObj || !cardObj.imageUrl || !cardObj.name) {
             console.warn(`⚠️ Carte ${index} invalide:`, cardObj);
             return;
          }
 
-         // Créer un wrapper pour la carte
-         const cardWrapper = document.createElement("div");
-         cardWrapper.className = "card-container relative";
+         const cardWrapper = this.createCardWrapper();
+         const card = this.createPlayerCard(cardObj, index);
 
-         // Créer l'élément image de la carte
-         const card = document.createElement("img");
-         card.src = cardObj.imageUrl;
-         card.alt = cardObj.name || "Carte Pokémon";
-         card.id = `hand-card-${index}`;
-
-         // Ajouter une classe spéciale pour la première carte qui sera recyclée
-         card.className = index === 0
-            ? "w-40 h-auto rounded-lg shadow cursor-pointer pokemon-card transition-all duration-300 first-card-to-recycle"
-            : "w-40 h-auto rounded-lg shadow cursor-pointer pokemon-card transition-all duration-300";
-
-         // Gestion d'erreur de chargement d'image
-         card.onerror = () => {
-            console.error(`❌ Erreur de chargement de l'image: ${cardObj.imageUrl}`);
-            card.src = "img/back-card.jpg";
-            card.alt = "Erreur de chargement";
-         };         // Ajouter les événements
-         if (this.cardModal) {
-            card.addEventListener("click", () => this.cardModal.showCardModal(cardObj));
-         }
-
-         // Utiliser le DragAndDropManager si disponible
-         if (this.dragManager) {
-            this.dragManager.makeDraggable(card, `hand-card-${index}`);
-         } else {
-            // Fallback pour l'ancienne méthode
-            card.setAttribute("draggable", "true");
-            card.addEventListener("dragstart", (ev) => {
-               ev.dataTransfer.setData("text/plain", `hand-card-${index}`);
-               card.classList.add("dragging");
-            });
-
-            card.addEventListener("dragend", () => {
-               card.classList.remove("dragging");
-            });
-         }
+         this.setupCardEvents(card, cardObj, index);
 
          cardWrapper.appendChild(card);
          this.container.appendChild(cardWrapper);
       });
 
-      console.log(`✅ Rendu terminé: ${this.container.children.length} cartes affichées`);
+      console.log(`✅ Rendu joueur terminé: ${this.container.children.length} cartes affichées`);
    }
 
 
-   // Rend les cartes de l'adversaire (dos de carte)
-   renderOpponentHand() {
+   renderOpponent() {
+      console.log("🤖 === RENDU MAIN ADVERSAIRE ===");
+      console.log(`🃏 Nombre de cartes: ${this.cards.length}`);
+      console.log(`📦 Container:`, this.container);
+
       this.clear();
 
-      const handSize = this.cards.length;
-
-      for (let i = 0; i < handSize; i++) {
-         // Créer un wrapper pour chaque carte
-         const cardWrapper = document.createElement("div");
-         cardWrapper.className = "card-container relative";
-
-         // Créer l'élément image de la carte
-         const card = document.createElement("img");
-         card.src = "img/back-card.jpg";
-         card.alt = "Dos de carte Pokémon";
-         card.className = "w-40 h-auto rounded-lg shadow transition-all duration-300";
-         card.id = `opponent-hand-card-${i}`;
+      for (let i = 0; i < this.cards.length; i++) {
+         console.log(`🎴 Création carte adversaire ${i + 1}/${this.cards.length}`);
+         const cardWrapper = this.createCardWrapper();
+         const card = this.createOpponentCard(i);
 
          cardWrapper.appendChild(card);
          this.container.appendChild(cardWrapper);
       }
+
+      console.log(`✅ Rendu adversaire terminé: ${this.container.children.length} cartes affichées`);
    }
 
-
-   // Rend la main selon le type (joueur ou adversaire)
    render() {
       if (this.isPlayer) {
-         this.renderPlayerHand();
+         this.renderPlayer();
       } else {
-         this.renderOpponentHand();
+         this.renderOpponent();
       }
    }
 
 
-   // Obtient la longueur de la main
+   createCardWrapper() {
+      const wrapper = document.createElement("div");
+      wrapper.className = "card-container relative";
+      return wrapper;
+   }
+
+   createPlayerCard(cardObj, index) {
+      const card = document.createElement("img");
+      card.src = cardObj.imageUrl;
+      card.alt = cardObj.name || "Carte Pokémon";
+      card.id = `hand-card-${index}`;
+      card.className = this.getCardClassName(index);
+
+      card.onerror = () => {
+         card.src = "img/back-card.jpg";
+         card.alt = "Erreur de chargement";
+      };
+
+      return card;
+   }
+
+   createOpponentCard(index) {
+      const card = document.createElement("img");
+      card.src = "img/back-card.jpg";
+      card.alt = "Dos de carte Pokémon";
+      card.className = "w-40 h-auto rounded-lg shadow transition-all duration-300";
+      card.id = `opponent-hand-card-${index}`;
+      return card;
+   }
+
+   getCardClassName(index) {
+      const baseClass = "w-40 h-auto rounded-lg shadow cursor-pointer pokemon-card transition-all duration-300";
+      return index === 0 ? `${baseClass} first-card-to-recycle` : baseClass;
+   }
+
+   setupCardEvents(card, cardObj, index) {
+      if (this.cardModal) {
+         card.addEventListener("click", () => this.cardModal.show(cardObj));
+      }
+
+      if (this.dragManager) {
+         this.dragManager.makeDraggable(card, `hand-card-${index}`);
+      } else {
+         this.setupDragEvents(card, index);
+      }
+   }
+
+   setupDragEvents(card, index) {
+      card.setAttribute("draggable", "true");
+      card.addEventListener("dragstart", (ev) => {
+         ev.dataTransfer.setData("text/plain", `hand-card-${index}`);
+         card.classList.add("dragging");
+      });
+
+      card.addEventListener("dragend", () => {
+         card.classList.remove("dragging");
+      });
+   }
+
    get length() {
       return this.cards.length;
    }
 
-
-   // Vérifie si la main est vide
    isEmpty() {
       return this.cards.length === 0;
    }
 
-
-   // Vérifie si la main est pleine
    isFull(maxSize = 5) {
       return this.cards.length >= maxSize;
    }

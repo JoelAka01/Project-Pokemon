@@ -1,3 +1,9 @@
+// (Suppression de l'accolade fermante superflue)
+import { AttackModal } from './modals/AttackModal.js';
+import { GameModal } from './modals/GameModal.js';
+import { NotificationModal } from './modals/NotificationModal.js';
+import { BattleEndModal } from './modals/BattleEndModal.js';
+
 export class BattleSystem {
    constructor(game) {
       this.game = game;
@@ -11,15 +17,13 @@ export class BattleSystem {
       this.maxOpponentHP = null;
       this.opponentAttacksFirst = false;
       this.attackSelectionStarted = false;
+
+      this.playerCardHP = {};
+      this.opponentCardHP = {};
    }
 
-   centerModal(modal) {
-      modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-   }
-
-   showAttackChoiceModal(card, isPlayer = true) {
+   showAttackModal(card, isPlayer = true) {
       if (!card || !card.attacks || card.attacks.length === 0) {
-         console.warn("Cette carte n'a pas d'attaques disponibles");
          return;
       }
 
@@ -28,29 +32,7 @@ export class BattleSystem {
 
       if (this.game.save) this.game.save();
 
-      const modal = document.createElement('div');
-      modal.id = 'attack-choice-modal';
-      this.centerModal(modal);
-
-      modal.innerHTML = `
-         <div class="bg-white rounded-lg p-6 max-w-md mx-4">
-            <h3 class="text-lg font-bold mb-4">Choisir une attaque</h3>
-            <img src="${card.imageUrl}" alt="${card.name}" class="w-24 h-24 mx-auto mb-4 rounded">
-            <div class="space-y-2">
-               ${card.attacks.map((attack, index) => `
-                  <button class="attack-option w-full p-3 border rounded hover:bg-gray-100"
-                          data-attack-index="${index}">
-                     <div class="flex justify-between">
-                        <span>${attack.name}</span>
-                        <span class="font-bold text-red-600">${attack.damage || '0'}</span>
-                     </div>
-                  </button>
-               `).join('')}
-            </div>
-         </div>
-      `;
-
-      document.body.appendChild(modal);
+      const modal = AttackModal.show(card, isPlayer);
 
       modal.querySelectorAll('.attack-option').forEach(button => {
          button.onclick = () => {
@@ -66,15 +48,11 @@ export class BattleSystem {
 
                if (this.game.save) this.game.save();
 
-               // Vérifier si l'adversaire a déjà une attaque sélectionnée
                if (this.selectedOpponentAttack) {
-                  console.log("🚀 Les deux attaques sont prêtes, lancement du combat");
-                  console.log("🔥 L'adversaire attaque en premier:", this.opponentAttacksFirst);
                   setTimeout(() => {
                      this.startBattle();
                   }, 1000);
                } else if (this.game.opponent.activeCard) {
-                  // Sélectionner automatiquement une attaque pour l'adversaire
                   this.selectOpponentAttack();
                }
             } else {
@@ -86,16 +64,11 @@ export class BattleSystem {
          };
       });
 
-      // Empêcher la fermeture du modal en cliquant à l'extérieur
-      // modal.onclick = (e) => {
-      //    if (e.target === modal) modal.remove();
-      // };
    }
 
    selectOpponentAttack() {
       const opponentCard = this.game.opponent.activeCard;
       if (!opponentCard || !opponentCard.attacks || opponentCard.attacks.length === 0) {
-         console.warn("❌ L'adversaire n'a pas de carte active ou d'attaques disponibles");
          return;
       }
 
@@ -105,7 +78,6 @@ export class BattleSystem {
       if (this.game.save) this.game.save();
 
       if (this.selectedPlayerAttack && this.selectedOpponentAttack) {
-         console.log("🔥 Ordre d'attaque - L'adversaire attaque en premier:", this.opponentAttacksFirst);
          setTimeout(() => {
             this.startBattle();
          }, 1000);
@@ -119,14 +91,13 @@ export class BattleSystem {
       const opponentCard = this.game.opponent.activeCard;
 
       if (!playerCard || !opponentCard) {
-         console.warn("❌ Impossible de lancer le combat - cartes manquantes");
          return;
       }
 
       if (this.playerHP === null || this.opponentHP === null) {
          const resetPlayerHP = this.playerHP === null;
          const resetOpponentHP = this.opponentHP === null;
-         this.initializeBattleHP(playerCard, opponentCard, resetPlayerHP, resetOpponentHP);
+         this.initBattleHP(playerCard, opponentCard, resetPlayerHP, resetOpponentHP);
       }
 
       this.isInBattle = true;
@@ -136,55 +107,80 @@ export class BattleSystem {
       try {
          if (this.opponentAttacksFirst) {
             this.battlePhase = 'opponent-attack';
-            await this.showOpponentAttack(opponentCard, playerCard);
-            await this.delay(3000);
+            await this.opponentAttack(opponentCard, playerCard);
+            await this.delay(1000);
+
+            // Vérifier KO après attaque adverse
+            if (this.playerHP <= 0 || this.opponentHP <= 0) {
+               await this.handleKOs();
+               return;
+            }
 
             this.battlePhase = 'player-attack';
-            await this.showPlayerAttack(playerCard, opponentCard);
+            await this.playerAttack(playerCard, opponentCard);
+            await this.delay(1000);
+            // On ne vérifie PAS le KO ici, on laisse l'adversaire attaquer même s'il est KO
+
+            this.battlePhase = 'opponent-attack';
+            await this.opponentAttack(opponentCard, playerCard);
+            await this.delay(1000);
+
+            // Après les deux attaques, on gère les KO
+            if (this.playerHP <= 0 && this.opponentHP <= 0) {
+               await this.handleKOs();
+               return;
+            }
 
             this.opponentAttacksFirst = false;
          } else {
             this.battlePhase = 'player-attack';
-            await this.showPlayerAttack(playerCard, opponentCard);
-            await this.delay(3000);
+            await this.playerAttack(playerCard, opponentCard);
+            await this.delay(1000);
+            // On ne vérifie PAS le KO ici, on laisse l'adversaire attaquer même s'il est KO
 
             this.battlePhase = 'opponent-attack';
-            await this.showOpponentAttack(opponentCard, playerCard);
+            await this.opponentAttack(opponentCard, playerCard);
+            await this.delay(1000);
+
+            // Après les deux attaques, on gère les KO
+            if (this.playerHP <= 0 || this.opponentHP <= 0) {
+               await this.handleKOs();
+               return;
+            }
          }
 
          this.battlePhase = 'finished';
-         await this.delay(1000);
 
+         // S'assurer que la modal d'attaque est retirée avant d'afficher la modal "changer de Pokémon"
+         const attackDisplay = document.getElementById('battle-attack-display');
+         if (attackDisplay) attackDisplay.remove();
+
+         // Afficher la modal "changer de Pokémon" immédiatement après les deux attaques
+         this.showChangeModal();
          if (this.game.save) this.game.save();
-
-         // Vérifier les KO après chaque round de combat
-         if (this.playerHP <= 0 || this.opponentHP <= 0) {
-            await this.handleKOsAfterBattle();
-         } else {
-            this.showChangeCardModal();
-         }
-
       } catch (error) {
-         console.error("Erreur pendant le combat:", error);
       } finally {
          this.isInBattle = false;
       }
    }
 
-   initializeBattleHP(playerCard, opponentCard, resetPlayerHP = false, resetOpponentHP = false) {
+   initBattleHP(playerCard, opponentCard, resetPlayerHP = false, resetOpponentHP = false) {
       const newMaxPlayerHP = parseInt(playerCard.hp) || 100;
       const newMaxOpponentHP = parseInt(opponentCard.hp) || 100;
 
+      const playerId = playerCard.id || playerCard.name;
+      const opponentId = opponentCard.id || opponentCard.name;
+
       if (this.playerHP === null || resetPlayerHP) {
          this.maxPlayerHP = newMaxPlayerHP;
-         this.playerHP = this.maxPlayerHP;
+         this.playerHP = this.playerCardHP[playerId] !== undefined ? this.playerCardHP[playerId] : this.maxPlayerHP;
       } else {
          this.maxPlayerHP = newMaxPlayerHP;
       }
 
       if (this.opponentHP === null || resetOpponentHP) {
          this.maxOpponentHP = newMaxOpponentHP;
-         this.opponentHP = this.maxOpponentHP;
+         this.opponentHP = this.opponentCardHP[opponentId] !== undefined ? this.opponentCardHP[opponentId] : this.maxOpponentHP;
       } else {
          this.maxOpponentHP = newMaxOpponentHP;
       }
@@ -192,11 +188,13 @@ export class BattleSystem {
       if (this.game.save) this.game.save();
    }
 
-   async showPlayerAttack(playerCard, opponentCard) {
+   async playerAttack(playerCard, opponentCard) {
       const playerAttack = this.selectedPlayerAttack || (playerCard.attacks && playerCard.attacks[0]);
-      const damage = this.calculateDamageFromAttack(playerAttack);
+      const damage = this.calcDamage(playerAttack);
 
       this.opponentHP = Math.max(0, this.opponentHP - damage);
+      const opponentId = opponentCard.id || opponentCard.name;
+      this.opponentCardHP[opponentId] = this.opponentHP;
 
       if (this.game.save) this.game.save();
 
@@ -214,11 +212,18 @@ export class BattleSystem {
       await this.delay(2000);
    }
 
-   async showOpponentAttack(opponentCard, playerCard) {
+   async opponentAttack(opponentCard, playerCard) {
       const opponentAttack = this.selectedOpponentAttack || (opponentCard.attacks && opponentCard.attacks[0]);
-      const damage = this.calculateDamageFromAttack(opponentAttack);
+      const damage = this.calcDamage(opponentAttack);
 
+      // Initialiser playerHP à la valeur max AVANT d'appliquer les dégâts
+      if (this.playerHP === null) {
+         this.maxPlayerHP = parseInt(playerCard.hp) || 100;
+         this.playerHP = this.maxPlayerHP;
+      }
       this.playerHP = Math.max(0, this.playerHP - damage);
+      const playerId = playerCard.id || playerCard.name;
+      this.playerCardHP[playerId] = this.playerHP;
 
       if (this.game.save) this.game.save();
 
@@ -237,145 +242,59 @@ export class BattleSystem {
    }
 
    showAttackDisplay({ attacker, defender, attack, damage, isPlayer, message, defenderHP, maxDefenderHP }) {
-      const existingDisplay = document.getElementById('battle-attack-display');
-      if (existingDisplay) existingDisplay.remove();
-
-      const attackDisplay = document.createElement('div');
-      attackDisplay.id = 'battle-attack-display';
-      this.centerModal(attackDisplay);
-
-      const hpPercentage = Math.max(0, (defenderHP / maxDefenderHP) * 100);
-      const bgColor = isPlayer ? 'bg-blue-600' : 'bg-red-600';
-
-      attackDisplay.innerHTML = `
-         <div class="bg-white rounded-lg p-6 max-w-md mx-4 text-center ${bgColor} text-white">
-            <h3 class="text-xl font-bold mb-4">
-               ${isPlayer ? '⚔️ Votre Attaque !' : '🛡️ Attaque Adverse !'}
-            </h3>
-            <p class="mb-4">${message}</p>
-            
-            <div class="flex justify-around items-center mb-4">
-               <div>
-                  <img src="${attacker.imageUrl}" alt="${attacker.name}" class="w-16 h-16 rounded mb-2">
-                  <p class="text-sm">${attacker.name}</p>
-               </div>
-               <div class="text-2xl">VS</div>
-               <div>
-                  <img src="${defender.imageUrl}" alt="${defender.name}" class="w-16 h-16 rounded mb-2">
-                  <p class="text-sm">${defender.name}</p>
-               </div>
-            </div>
-            
-            ${attack ? `<p class="mb-4"><strong>${attack.name}</strong></p>` : ''}
-            
-            <p class="text-lg font-bold mb-4">💥 Dégâts: ${damage}</p>
-            
-            <div class="bg-black bg-opacity-30 rounded p-3">
-               <p class="mb-2">${defender.name}: ${defenderHP}/${maxDefenderHP} PV</p>
-               <div class="w-full bg-gray-600 rounded h-3 overflow-hidden">
-                  <div class="h-full transition-all duration-500 ${hpPercentage > 60 ? 'bg-green-500' : hpPercentage > 30 ? 'bg-yellow-500' : 'bg-red-500'}" 
-                       style="width: ${hpPercentage}%"></div>
-               </div>
-               ${defenderHP <= 0 ? '<p class="text-red-300 font-bold mt-2">💀 KO !</p>' : ''}
-            </div>
-         </div>
-      `;
-
-      document.body.appendChild(attackDisplay);
-
-      // Fermer automatiquement après 2.5 secondes (légèrement avant les autres délais)
-      setTimeout(() => {
-         if (attackDisplay && attackDisplay.parentNode) {
-            attackDisplay.remove();
-         }
-      }, 1000);
+      return AttackModal.showDisplay({
+         attacker, defender, attack, damage, isPlayer, message, defenderHP, maxDefenderHP
+      });
    }
 
-   showChangeCardModal() {
+   showChangeModal() {
+      const modal = GameModal.showChangeCard(this.playerHP, this.maxPlayerHP, this.opponentHP, this.maxOpponentHP);
+
+      if (modal) {
+         const yesBtn = modal.querySelector('#change-card-yes');
+         const noBtn = modal.querySelector('#change-card-no');
+         if (yesBtn) {
+            yesBtn.onclick = () => {
+               this.changeCard(true);
+               modal.remove();
+            };
+         }
+         if (noBtn) {
+            noBtn.onclick = () => {
+               this.changeCard(false);
+               modal.remove();
+            };
+         }
+         modal.onclick = (e) => {
+            if (e.target === modal) {
+               this.changeCard(false);
+               modal.remove();
+            }
+         };
+      }
+   }
+
+   showEndModal() {
       const attackDisplay = document.getElementById('battle-attack-display');
       if (attackDisplay) attackDisplay.remove();
 
-      const modal = document.createElement('div');
-      modal.id = 'change-card-modal';
-      this.centerModal(modal);
+      let result;
+      if (this.playerHP <= 0 && this.opponentHP <= 0) {
+         result = 'draw';
+      } else if (this.playerHP > 0) {
+         result = 'victory';
+      } else {
+         result = 'defeat';
+      }
 
-      modal.innerHTML = `
-         <div class="bg-white rounded-lg p-6 max-w-3xl mx-4">
-            <h3 class="text-lg font-bold mb-4">Continuer le combat ?</h3>
-            <div class="mb-4 p-3 bg-gray-100 rounded">
-               <p class="mb-2">PV actuels :</p>
-               <p>Vous: ${this.playerHP}/${this.maxPlayerHP}</p>
-               <p>Adversaire: ${this.opponentHP}/${this.maxOpponentHP}</p>
-            </div>
-            <div class="flex space-x-3">
-               <button id="change-card-yes" class="flex-1 bg-blue-600 text-white p-3 rounded hover:bg-blue-700">
-                  Changer de Pokémon
-               </button>
-               <button id="change-card-no" class="flex-1 bg-green-600 text-white p-3 rounded hover:bg-green-700">
-                  Continuer
-               </button>
-            </div>
-         </div>
-      `;
-
-      document.body.appendChild(modal);
-
-      document.getElementById('change-card-yes').onclick = () => {
-         this.handleChangeCard(true);
-         modal.remove();
-      };
-
-      document.getElementById('change-card-no').onclick = () => {
-         this.handleChangeCard(false);
-         modal.remove();
-      };
-
-      modal.onclick = (e) => {
-         if (e.target === modal) {
-            this.handleChangeCard(false);
-            modal.remove();
-         }
-      };
-   }
-
-   showBattleEndModal() {
-      const attackDisplay = document.getElementById('battle-attack-display');
-      if (attackDisplay) attackDisplay.remove();
-
-      const winner = this.playerHP > 0 ? 'Vous avez gagné' : 'Vous avez perdu';
-      const winnerEmoji = this.playerHP > 0 ? '🎉' : '💀';
-
-      const modal = document.createElement('div');
-      modal.id = 'battle-end-modal';
-      this.centerModal(modal);
-
-      modal.innerHTML = `
-         <div class="bg-white rounded-lg p-6 max-w-md mx-4 text-center">
-            <h3 class="text-lg font-bold mb-4">${winnerEmoji} ${winner} !</h3>
-            <div class="mb-4 p-3 bg-gray-100 rounded">
-               <p class="mb-2">Résultat final :</p>
-               <p>Vous: ${this.playerHP}/${this.maxPlayerHP} PV</p>
-               <p>Adversaire: ${this.opponentHP}/${this.maxOpponentHP} PV</p>
-            </div>
-            <button id="battle-end-new-cards" class="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700">
-               🃏 Nouvelles cartes
-            </button>
-         </div>
-      `;
-
-      document.body.appendChild(modal);
-
-      document.getElementById('battle-end-new-cards').onclick = () => {
-         this.handleBattleEnd();
-         modal.remove();
-      };
-
-      modal.onclick = (e) => {
-         if (e.target === modal) {
-            this.handleBattleEnd();
-            modal.remove();
-         }
-      };
+      BattleEndModal.show(
+         result,
+         this.playerHP || 0,
+         this.maxPlayerHP || 100,
+         this.opponentHP || 0,
+         this.maxOpponentHP || 100,
+         () => this.handleBattleEnd()
+      );
    }
 
    handleBattleEnd() {
@@ -410,7 +329,7 @@ export class BattleSystem {
          this.isInBattle = false;
 
          this.resetHPAfterKO(playerWasKO, opponentWasKO);
-         this.resetSelectedAttacks();
+         this.resetAttacks();
 
          this.refreshUI();
 
@@ -421,38 +340,30 @@ export class BattleSystem {
                return;
             }
          }, 500);
-
       } catch (error) {
-         console.error("Erreur dans handleBattleEnd:", error);
          this.isInBattle = false;
          this.resetBattleHP();
-         this.resetSelectedAttacks();
+         this.resetAttacks();
       }
    }
 
-   async handleKOsAfterBattle() {
-      // Fermer tous les modals ouverts
+   async handleKOs() {
       const attackDisplay = document.getElementById('battle-attack-display');
       if (attackDisplay) attackDisplay.remove();
 
       let playerWasKO = false;
       let opponentWasKO = false;
 
-      // Gérer le KO du joueur
       if (this.playerHP <= 0 && this.game.player.activeCard) {
-         console.log("💀 Votre Pokémon est KO !");
          const koCard = this.game.player.activeCard;
-         console.log("🃏 Carte KO du joueur:", koCard.name);
          this.game.player.discardCard(koCard);
          this.game.player.activeCard = null;
          this.game.playerActiveZone.setActiveCard(null);
          playerWasKO = true;
-         console.log("📚 Défausse joueur après KO:", this.game.player.discardPile.length, "cartes");
 
-         // Vérifier immédiatement la condition de victoire après ajout à la défausse
-         const gameEnded = this.checkWinCondition();
+         const gameEnded = this.checkWin();
          if (gameEnded) {
-            return; // Arrêter immédiatement si le jeu est terminé
+            return;
          }
 
          if (this.game.checkDeckOut && this.game.checkDeckOut()) {
@@ -460,158 +371,104 @@ export class BattleSystem {
          }
       }
 
-      // Gérer le KO de l'adversaire
+
       if (this.opponentHP <= 0 && this.game.opponent.activeCard) {
-         console.log("💀 Le Pokémon adverse est KO !");
          const koCard = this.game.opponent.activeCard;
-         console.log("🃏 Carte KO de l'adversaire:", koCard.name);
          this.game.opponent.discardCard(koCard);
          this.game.opponent.activeCard = null;
          this.game.opponentActiveZone.setActiveCard(null);
          opponentWasKO = true;
-         console.log("📚 Défausse adversaire après KO:", this.game.opponent.discardPile.length, "cartes");
 
-         // Vérifier immédiatement la condition de victoire après ajout à la défausse
-         const gameEnded = this.checkWinCondition();
+         const gameEnded = this.checkWin();
          if (gameEnded) {
-            return; // Arrêter immédiatement si le jeu est terminé
+            return;
          }
 
          if (this.game.checkDeckOut && this.game.checkDeckOut()) {
             return;
          }
+
+         // Toujours tenter le remplacement si la main adverse n'est pas vide
+         if (this.game.opponent.hand.cards.length > 0) {
+            this._opponentReplacing = true;
+            this._opponentJustReplaced = true;
+            NotificationModal.showOpponentReplacementNotification();
+            await this.opponentKOWithDelay();
+            this._opponentReplacing = false;
+            this._opponentJustReplaced = false;
+         } else {
+            // Si la main est vide, réinitialiser les flags pour éviter un blocage
+            this._opponentReplacing = false;
+            this._opponentJustReplaced = false;
+         }
       }
 
-      // Réinitialiser les HP après KO
       this.resetHPAfterKO(playerWasKO, opponentWasKO);
-      this.resetSelectedAttacks();
+      this.resetAttacks();
 
-      // Rafraîchir l'UI pour voir les changements dans les défausses
       this.refreshUI();
-
-      // Forcer le rendu des défausses
-      console.log("🔄 Forcer le rendu des défausses après KO...");
       if (this.game.renderDiscardPiles) {
          this.game.renderDiscardPiles();
       }
 
       if (this.game.save) this.game.save();
 
-      // Gérer le remplacement des cartes
       if (playerWasKO && opponentWasKO) {
-         // Double KO - l'adversaire pose en premier, puis le joueur
-         console.log("💀 Double KO - gestion séquentielle");
          await this.handleDoubleKO();
       } else if (playerWasKO) {
-         // Seul le joueur est KO - afficher notification directe
          this.showPlayerReplacementNotification();
-      } else if (opponentWasKO) {
-         // Seul l'adversaire est KO - afficher notification et remplacement automatique avec délai
-         console.log("🤖 Adversaire KO - placement automatique avec délai");
-         this.showOpponentReplacementNotification();
-         await this.handleOpponentKOWithDelay();
       }
 
-      // Vérifier la condition de victoire après chaque KO
-      const gameEnded = this.checkWinCondition();
+      const gameEnded = this.checkWin();
       if (gameEnded) {
-         return; // Arrêter le traitement si le jeu est terminé
+         return;
       }
    }
 
-   checkWinCondition() {
+   checkWin() {
       const playerDiscardCount = this.game.player.discardPile.length;
       const opponentDiscardCount = this.game.opponent.discardPile.length;
 
-      console.log(`🎯 Vérification condition de victoire - Joueur: ${playerDiscardCount}/5, Adversaire: ${opponentDiscardCount}/5`);
-
       if (playerDiscardCount >= 5) {
-         console.log("🏆 L'adversaire remporte la partie ! (Joueur a 5 cartes en défausse)");
-         this.showGameEndModal("Défaite", "Vous avez perdu ! Vous avez 5 cartes dans votre défausse.");
+         BattleEndModal.showWithCustomMessage("defeat", "Vous avez perdu ! Vous avez 5 cartes dans votre défausse.", 0, 100, 100, 100, () => {
+            if (this.game.resetGame) {
+               this.game.resetGame();
+            } else {
+               location.reload();
+            }
+         });
          return true;
       }
 
       if (opponentDiscardCount >= 5) {
-         console.log("🏆 Le joueur remporte la partie ! (Adversaire a 5 cartes en défausse)");
-         this.showGameEndModal("Victoire", "Félicitations ! L'adversaire a 5 cartes dans sa défausse.");
+         BattleEndModal.showWithCustomMessage("victory", "Félicitations ! L'adversaire a 5 cartes dans sa défausse.", 100, 100, 0, 100, () => {
+            if (this.game.resetGame) {
+               this.game.resetGame();
+            } else {
+               location.reload();
+            }
+         });
          return true;
       }
 
       return false;
    }
 
-   showGameEndModal(result, message) {
-      const modal = document.createElement('div');
-      modal.id = 'game-end-modal';
-      modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-
-      const isVictory = result === "Victoire";
-      const emoji = isVictory ? "🏆" : "💀";
-      const bgColor = isVictory ? "bg-green-100" : "bg-red-100";
-      const textColor = isVictory ? "text-green-800" : "text-red-800";
-
-      modal.innerHTML = `
-         <div class="bg-white rounded-lg p-8 max-w-md mx-4 text-center ${bgColor}">
-            <div class="text-6xl mb-4">${emoji}</div>
-            <h2 class="text-2xl font-bold mb-4 ${textColor}">${result}</h2>
-            <p class="text-lg mb-6 ${textColor}">${message}</p>
-            <button id="restart-game" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mr-2">
-               Recommencer
-            </button>
-            <button id="quit-game" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
-               Quitter
-            </button>
-         </div>
-      `;
-
-      document.body.appendChild(modal);
-
-      // Gérer les boutons
-      const restartBtn = modal.querySelector('#restart-game');
-      const quitBtn = modal.querySelector('#quit-game');
-
-      restartBtn.addEventListener('click', () => {
-         modal.remove();
-         if (this.game.resetGame) {
-            this.game.resetGame();
-         } else {
-            location.reload();
-         }
-      });
-
-      quitBtn.addEventListener('click', () => {
-         modal.remove();
-         if (this.game.quitGame) {
-            this.game.quitGame();
-         } else {
-            location.href = '/';
-         }
-      });
-   }
-
-   async handleChangeCard(shouldChange) {
+   async changeCard(shouldChange) {
       if (shouldChange) {
          if (this.game.player.activeCard) {
+            const playerId = this.game.player.activeCard.id || this.game.player.activeCard.name;
+            this.playerCardHP[playerId] = this.playerHP;
+
             this.game.player.hand.cards.push(this.game.player.activeCard);
             this.game.player.activeCard = null;
             this.game.playerActiveZone.setActiveCard(null);
          }
 
-         if (this.game.opponent.activeCard && this.opponentHP <= 0) {
-            this.game.opponent.hand.cards.push(this.game.opponent.activeCard);
-            this.game.opponent.activeCard = null;
-            this.game.opponentActiveZone.setActiveCard(null);
-
-            await this.handleOpponentKO();
-         }
-
+         this.resetPlayerHP();
+         this.resetAttacks();
          this.refreshUI();
-
          this.game.addDropListeners(this.game.playerActive, this.game.opponentActive, this.game.handContainer);
-
-         this.resetBattleHP();
-         this.resetSelectedAttacks();
-
       } else {
          setTimeout(() => {
             this.startBattle();
@@ -621,7 +478,7 @@ export class BattleSystem {
       this.game.save && this.game.save();
    }
 
-   resetBattleHP() {
+   resetHP() {
       this.playerHP = null;
       this.opponentHP = null;
       this.maxPlayerHP = null;
@@ -638,14 +495,14 @@ export class BattleSystem {
       this.maxOpponentHP = null;
    }
 
-   resetSelectedAttacks() {
+   resetAttacks() {
       this.selectedPlayerAttack = null;
       this.selectedOpponentAttack = null;
    }
 
    resetHPAfterKO(playerWasKO, opponentWasKO) {
       if (playerWasKO && opponentWasKO) {
-         this.resetBattleHP();
+         this.resetHP();
       } else if (playerWasKO) {
          this.resetPlayerHP();
       } else if (opponentWasKO) {
@@ -653,7 +510,7 @@ export class BattleSystem {
       }
    }
 
-   calculateDamageFromAttack(attack) {
+   calcDamage(attack) {
       if (!attack) return 20;
 
       if (attack.damage) {
@@ -694,11 +551,13 @@ export class BattleSystem {
    }
 
    refreshUI() {
-      // Rafraîchir l'affichage principal du jeu
+      if (this.game.opponentHand && this.game.opponent) {
+         this.game.opponentHand.cards = this.game.opponent.hand.cards;
+      }
       if (this.game.renderCards) this.game.renderCards();
+      if (this.game.renderOpponentCards) this.game.renderOpponentCards();
       if (this.game.display) this.game.display();
 
-      // Rafraîchir les zones actives
       if (this.game.playerActiveZone && this.game.playerActiveZone.render) {
          this.game.playerActiveZone.render();
       }
@@ -706,43 +565,27 @@ export class BattleSystem {
          this.game.opponentActiveZone.render();
       }
 
-      // Rafraîchir spécifiquement les défausses
       if (this.game.playerDiscard && this.game.opponentDiscard) {
-         console.log("🔄 Rafraîchissement des défausses...");
          this.game.playerDiscard.setCards(this.game.player.discardPile);
          this.game.opponentDiscard.setCards(this.game.opponent.discardPile);
-         console.log("Player discard:", this.game.player.discardPile.length, "cartes");
-         console.log("Opponent discard:", this.game.opponent.discardPile.length, "cartes");
       }
 
-      // Rafraîchir les listeners de drag and drop
       if (this.game.addDropListeners && this.game.playerActive && this.game.opponentActive && this.game.handContainer) {
          this.game.addDropListeners(this.game.playerActive, this.game.opponentActive, this.game.handContainer);
       }
    }
 
-   async handleOpponentKOWithDelay() {
-      console.log("⏳ Délai avant placement automatique de l'adversaire...");
-
+   async opponentKOWithDelay() {
       if (this.game.opponent.hand.cards.length > 0) {
-         // Attendre 4 secondes avant le placement
-         await this.delay(4000);
-
-         console.log("🤖 Placement d'une nouvelle carte adverse...");
-
-         // Placement direct de la carte
+         // Remplacement immédiat de la carte adverse KO
          const randomIndex = Math.floor(Math.random() * this.game.opponent.hand.cards.length);
          const selectedCard = this.game.opponent.hand.cards.splice(randomIndex, 1)[0];
          this.game.opponent.activeCard = selectedCard;
          this.game.opponentActiveZone.setActiveCard(selectedCard);
 
-         console.log("✅ Nouvelle carte adverse placée:", selectedCard.name);
-
-         // Supprimer la notification de placement
          const replacementNotification = document.getElementById('opponent-replacement-notification');
          if (replacementNotification) replacementNotification.remove();
 
-         // Rafraîchir l'UI
          if (this.game.renderOpponentCards) {
             this.game.renderOpponentCards();
          }
@@ -750,39 +593,25 @@ export class BattleSystem {
 
          if (this.game.save) this.game.save();
 
-         // Attendre 1 seconde supplémentaire puis lancer l'attaque
-         console.log("⏳ Attente avant l'attaque de l'adversaire...");
          await this.delay(1000);
 
-         console.log("🚀 Lancement automatique de l'attaque adverse avec affichage...");
-
-         // Vérifier si la carte a des attaques
          if (!selectedCard.attacks || selectedCard.attacks.length === 0) {
-            console.log("❌ La carte adverse n'a pas d'attaques disponibles");
             return;
          }
 
-         // Sélectionner une attaque aléatoire pour l'adversaire
          const randomAttackIndex = Math.floor(Math.random() * selectedCard.attacks.length);
          const selectedAttack = selectedCard.attacks[randomAttackIndex];
          this.selectedOpponentAttack = selectedAttack;
 
-         console.log("🎯 Attaque adverse sélectionnée:", selectedAttack.name);
+         const damage = this.calcDamage(selectedAttack);
 
-         // Calculer les dégâts et appliquer au joueur
-         const damage = this.calculateDamageFromAttack(selectedAttack);
-         console.log("💥 Dégâts de l'attaque adverse:", damage);
-
-         // Initialiser HP joueur si nécessaire
-         if (!this.playerHP && this.game.player.activeCard) {
+         if (this.playerHP === null && this.game.player.activeCard) {
             this.playerHP = parseInt(this.game.player.activeCard.hp) || 100;
             this.maxPlayerHP = this.playerHP;
          }
 
-         // Appliquer les dégâts
          this.playerHP = Math.max(0, this.playerHP - damage);
 
-         // Afficher l'attaque adverse avec showAttackDisplay
          this.showAttackDisplay({
             attacker: selectedCard,
             defender: this.game.player.activeCard,
@@ -794,80 +623,66 @@ export class BattleSystem {
             maxDefenderHP: this.maxPlayerHP
          });
 
-         // Après l'affichage de l'attaque adverse, c'est au tour du joueur (même si KO)
-         setTimeout(() => {
-            if (this.game.player.activeCard) {
-               console.log("🎯 Tour du joueur après l'attaque adverse - attaque automatique (même si KO)");
-               this.performPlayerAutoAttack();
-            } else {
-               console.log("❌ Pas de carte active pour le joueur, gestion directe des KO");
-               this.handleKOsAfterBattle();
-            }
-         }, 3000); // Attendre 3 secondes après l'affichage de l'attaque adverse
+         await this.delay(3000);
+         if (this.game.player.activeCard) {
+            await this.playerAutoAttack();
+         } else {
+            await this.handleKOs();
+         }
 
-         // Sauvegarder l'état
          if (this.game.save) this.game.save();
-
-      } else {
-         console.log("❌ Aucune carte disponible pour l'adversaire");
-         // L'adversaire n'a plus de cartes - pas de notification nécessaire
       }
    }
 
-   async performOpponentAttack() {
-      console.log("🤖 Exécution de l'attaque automatique de l'adversaire...");
-
+   async opponentAttack() {
       const opponentCard = this.game.opponent.activeCard;
       if (!opponentCard || !opponentCard.attacks || opponentCard.attacks.length === 0) {
-         console.log("❌ Pas d'attaque disponible pour l'adversaire");
          return;
       }
 
-      // Vérifier si le joueur a une carte active
       if (!this.game.player.activeCard) {
-         console.log("❌ Le joueur n'a pas de carte active");
-         this.showPlayerAttackSelectionNotification();
+         NotificationModal.showPlayerAttackSelectionNotification();
          return;
       }
 
-      // Sélectionner une attaque aléatoire pour l'adversaire
+
       const randomAttackIndex = Math.floor(Math.random() * opponentCard.attacks.length);
       const selectedAttack = opponentCard.attacks[randomAttackIndex];
       this.selectedOpponentAttack = selectedAttack;
 
-      console.log("🎯 Attaque adverse sélectionnée:", selectedAttack.name);
+      const damage = this.calcDamage(selectedAttack);
 
-      // Calculer et appliquer les dégâts de l'attaque adverse uniquement
-      const damage = this.calculateDamageFromAttack(selectedAttack);
-      console.log("💥 Dégâts de l'attaque adverse:", damage);
-
-      // Afficher l'attaque adverse
-      this.showOpponentAttackDisplay(selectedAttack.name, damage);
-
-      // Appliquer les dégâts au joueur
+      // Initialiser les HP si nécessaire
       if (!this.playerHP) {
-         this.playerHP = this.game.player.activeCard.hp;
-         this.maxPlayerHP = this.game.player.activeCard.hp;
+         this.playerHP = parseInt(this.game.player.activeCard.hp) || 100;
+         this.maxPlayerHP = this.playerHP;
       }
 
-      this.playerHP -= damage;
-      console.log("❤️ HP joueur après attaque:", this.playerHP);
+      // Appliquer les dégâts AVANT d'afficher la modal
+      this.playerHP = Math.max(0, this.playerHP - damage);
 
-      // Attendre un peu pour l'affichage
+      this.showAttackDisplay({
+         attacker: opponentCard,
+         defender: this.game.player.activeCard,
+         attack: selectedAttack,
+         damage: damage,
+         isPlayer: false,
+         message: `${opponentCard.name} utilise ${selectedAttack.name} sur ${this.game.player.activeCard.name} !`,
+         defenderHP: this.playerHP,
+         maxDefenderHP: this.maxPlayerHP
+      });
+
       await this.delay(3000);
 
-      // Vérifier si le joueur est KO
+      // Si le joueur est KO, il doit quand même finir d'attaquer
       if (this.playerHP <= 0) {
-         console.log("💀 Le joueur est KO après l'attaque adverse");
-
-         // Fermer immédiatement la modal d'attaque si elle est ouverte
+         // Fermer la modal d'attaque si elle est ouverte
          const attackDisplay = document.getElementById('battle-attack-display');
          if (attackDisplay) attackDisplay.remove();
 
-         // Laisser le joueur attaquer avant de gérer le KO
-         console.log("⚔️ Le joueur attaque avant de changer de carte (même KO)");
-         if (this.game.player.activeCard) {
-            await this.performPlayerAutoAttack();
+         // Empêcher double appel de playerAutoAttack
+         if (this.game.player.activeCard && this.game.opponent.activeCard && !this._playerAutoAttackInProgress) {
+            await this.playerAutoAttack();
          }
 
          // Après l'attaque du joueur, gérer le KO
@@ -877,7 +692,7 @@ export class BattleSystem {
             this.game.playerActiveZone.setActiveCard(null);
 
             // Vérifier immédiatement la condition de victoire après ajout à la défausse
-            const gameEnded = this.checkWinCondition();
+            const gameEnded = this.checkWin();
             if (gameEnded) {
                return; // Arrêter immédiatement si le jeu est terminé
             }
@@ -885,13 +700,13 @@ export class BattleSystem {
 
          // Réinitialiser les HP et attaques
          this.resetBattleHP();
-         this.resetSelectedAttacks();
+         this.resetAttacks();
 
          // Rafraîchir l'UI
          this.refreshUI();
 
          // Vérifier la condition de victoire après le KO du joueur
-         const gameEnded = this.checkWinCondition();
+         const gameEnded = this.checkWin();
          if (gameEnded) {
             return; // Arrêter le traitement si le jeu est terminé
          }
@@ -902,16 +717,15 @@ export class BattleSystem {
 
       } else {
          // Le joueur survit, c'est maintenant à son tour d'attaquer
-         console.log("✅ Le joueur survit, c'est son tour d'attaquer");
 
          // Réinitialiser les attaques pour le prochain tour
-         this.resetSelectedAttacks();
+         this.resetAttacks();
 
-         // Afficher la modal de choix d'attaque pour le joueur
-         if (this.game.player.activeCard && this.game.player.activeCard.attacks) {
+         // Ouvrir la modal d'attaque du joueur pour le tour suivant UNIQUEMENT si aucune attaque n'est sélectionnée
+         if (this.game.player.activeCard && this.game.opponent.activeCard && !this.selectedPlayerAttack) {
             setTimeout(() => {
-               this.showAttackChoiceModal(this.game.player.activeCard, true);
-            }, 1000);
+               this.showAttackModal(this.game.player.activeCard, true);
+            }, 500);
          }
       }
 
@@ -919,45 +733,20 @@ export class BattleSystem {
       if (this.game.save) this.game.save();
    }
 
-   showOpponentAttackDisplay(attackName, damage) {
-      // Supprimer les anciens displays
-      const existingDisplay = document.getElementById('opponent-attack-display');
-      if (existingDisplay) existingDisplay.remove();
+   async playerAutoAttack() {
 
-      const attackDisplay = document.createElement('div');
-      attackDisplay.id = 'opponent-attack-display';
-      attackDisplay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-
-      attackDisplay.innerHTML = `
-         <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
-            <h2 class="text-xl font-bold mb-4 text-red-600">Attaque de l'adversaire !</h2>
-            <div class="text-center space-y-2">
-               <div class="text-lg font-semibold">${attackName}</div>
-               <div class="text-2xl font-bold text-red-500">${damage} dégâts</div>
-            </div>
-         </div>
-      `;
-
-      document.body.appendChild(attackDisplay);
-
-      // Supprimer automatiquement après 3 secondes
-      setTimeout(() => {
-         if (attackDisplay.parentNode) attackDisplay.remove();
-      }, 3000);
-   }
-
-   async performPlayerAutoAttack() {
-      console.log("🤖 Exécution de l'attaque automatique du joueur...");
+      if (this._playerAutoAttackInProgress) return;
+      this._playerAutoAttackInProgress = true;
 
       const playerCard = this.game.player.activeCard;
       if (!playerCard || !playerCard.attacks || playerCard.attacks.length === 0) {
-         console.log("❌ Pas d'attaque disponible pour le joueur");
+         this._playerAutoAttackInProgress = false;
          return;
       }
 
       // Vérifier si l'adversaire a une carte active
       if (!this.game.opponent.activeCard) {
-         console.log("❌ L'adversaire n'a pas de carte active");
+         this._playerAutoAttackInProgress = false;
          return;
       }
 
@@ -968,14 +757,11 @@ export class BattleSystem {
          this.selectedPlayerAttack = selectedAttack;
       }
 
-      console.log("🎯 Attaque joueur sélectionnée:", selectedAttack.name);
-
       // Calculer et appliquer les dégâts
-      const damage = this.calculateDamageFromAttack(selectedAttack);
-      console.log("💥 Dégâts de l'attaque joueur:", damage);
+      const damage = this.calcDamage(selectedAttack);
 
       // Initialiser HP adversaire si nécessaire
-      if (!this.opponentHP && this.game.opponent.activeCard) {
+      if (this.opponentHP === null && this.game.opponent.activeCard) {
          this.opponentHP = parseInt(this.game.opponent.activeCard.hp) || 100;
          this.maxOpponentHP = this.opponentHP;
       }
@@ -998,17 +784,14 @@ export class BattleSystem {
       // Sauvegarder l'état
       if (this.game.save) this.game.save();
 
-      // Attendre un peu pour l'affichage
       await this.delay(3000);
 
       // Vérifier si l'adversaire est KO
       if (this.opponentHP <= 0) {
-         console.log("💀 L'adversaire est KO après l'attaque du joueur");
-         await this.handleKOsAfterBattle();
+         await this.handleKOs();
       } else {
          // Vérifier si le joueur est KO après son attaque
          if (this.playerHP <= 0) {
-            console.log("💀 Le joueur est KO après son attaque, il doit changer de carte");
 
             // Fermer immédiatement la modal d'attaque si elle est ouverte
             const attackDisplay = document.getElementById('battle-attack-display');
@@ -1021,22 +804,24 @@ export class BattleSystem {
                this.game.playerActiveZone.setActiveCard(null);
 
                // Vérifier immédiatement la condition de victoire après ajout à la défausse
-               const gameEnded = this.checkWinCondition();
+               const gameEnded = this.checkWin();
                if (gameEnded) {
+                  this._playerAutoAttackInProgress = false;
                   return; // Arrêter immédiatement si le jeu est terminé
                }
             }
 
             // Réinitialiser les HP du joueur
             this.resetPlayerHP();
-            this.resetSelectedAttacks();
+            this.resetAttacks();
 
             // Rafraîchir l'UI
             this.refreshUI();
 
             // Vérifier la condition de victoire après le KO du joueur
-            const gameEnded = this.checkWinCondition();
+            const gameEnded = this.checkWin();
             if (gameEnded) {
+               this._playerAutoAttackInProgress = false;
                return; // Arrêter le traitement si le jeu est terminé
             }
 
@@ -1045,260 +830,84 @@ export class BattleSystem {
             this.showPlayerReplacementNotification();
          } else {
             // Continuer le combat normal ou afficher les options
-            console.log("✅ L'adversaire survit, continuer le combat");
             this.showChangeCardModal();
          }
       }
+
+      this._playerAutoAttackInProgress = false;
    }
 
-   // Vérifier l'état de restauration après un refresh
    checkStateAfterRefresh() {
-      console.log("🔄 Vérification de l'état après refresh...");
-
       const playerCard = this.game.player.activeCard;
       const opponentCard = this.game.opponent.activeCard;
 
-      // Si on est dans un état de bataille et qu'on a des cartes actives
-      if (this.battlePhase === 'selecting-attacks' && playerCard && opponentCard) {
-         console.log("🎯 Restauration de la sélection d'attaque après refresh");
-
-         // Si le joueur n'a pas encore sélectionné d'attaque, afficher la modal
-         if (!this.selectedPlayerAttack && this.attackSelectionStarted) {
-            setTimeout(() => {
-               this.showAttackChoiceModal(playerCard, true);
-            }, 500);
-         }
-      }
-
-      // Si on est en cours de combat mais qu'il manque des sélections d'attaque
-      else if (this.isInBattle && playerCard && opponentCard && !this.selectedPlayerAttack) {
-         console.log("🎯 Restauration de la sélection d'attaque en cours de combat");
-
+      // Ouvre la modal de choix d'attaque dès qu'une carte active est posée côté joueur,
+      // mais ne lance pas l'attaque automatiquement.
+      if (playerCard && opponentCard && !this.selectedPlayerAttack && !this.isInBattle) {
          setTimeout(() => {
-            this.showAttackChoiceModal(playerCard, true);
-         }, 500);
-      }
-
-      // Si on a les deux cartes mais pas d'attaques sélectionnées et qu'on n'est pas en bataille
-      else if (playerCard && opponentCard && !this.selectedPlayerAttack && !this.selectedOpponentAttack && !this.isInBattle) {
-         setTimeout(() => {
-            this.showAttackChoiceModal(playerCard, true);
+            this.showAttackModal(playerCard, true);
          }, 500);
       }
    }
 
    async handleDoubleKO() {
-      console.log("💀💀 Gestion du double KO...");
-
-      // Afficher une notification de double KO (non bloquante)
-      this.showDoubleKONotification();
-
-      // Attendre 2 secondes pour la notification
+      // Afficher la notification double KO
+      NotificationModal.showDoubleKONotification();
       await this.delay(2000);
 
-      // L'adversaire place sa carte en premier
-      if (this.game.opponent.hand.cards.length > 0) {
-         console.log("🤖 L'adversaire place sa carte en premier (double KO)");
-
-         // Placement automatique de la carte adverse
-         const randomIndex = Math.floor(Math.random() * this.game.opponent.hand.cards.length);
-         const opponentCard = this.game.opponent.hand.cards.splice(randomIndex, 1)[0];
-         this.game.opponent.activeCard = opponentCard;
-         this.game.opponentActiveZone.setActiveCard(opponentCard);
-
-         console.log("✅ Carte adverse placée:", opponentCard.name);
-
-         // Rafraîchir l'UI
-         this.refreshUI();
-
-         // Attendre 1 seconde puis l'adversaire attaque
-         await this.delay(1000);
-
-         console.log("🚀 L'adversaire attaque en premier après double KO");
-
-         // Vérifier si la carte a des attaques
-         if (opponentCard.attacks && opponentCard.attacks.length > 0) {
-            // Sélectionner une attaque aléatoire pour l'adversaire
-            const randomAttackIndex = Math.floor(Math.random() * opponentCard.attacks.length);
-            const selectedAttack = opponentCard.attacks[randomAttackIndex];
-            this.selectedOpponentAttack = selectedAttack;
-
-            console.log("🎯 Attaque adverse sélectionnée:", selectedAttack.name);
-
-            // Calculer les dégâts et appliquer au joueur
-            const damage = this.calculateDamageFromAttack(selectedAttack);
-            console.log("💥 Dégâts de l'attaque adverse:", damage);
-
-            // Initialiser HP joueur si nécessaire
-            if (!this.playerHP && this.game.player.activeCard) {
-               this.playerHP = parseInt(this.game.player.activeCard.hp) || 100;
-               this.maxPlayerHP = this.playerHP;
-            }
-
-            // Appliquer les dégâts
-            this.playerHP = Math.max(0, this.playerHP - damage);
-
-            // Afficher l'attaque adverse avec showAttackDisplay
-            this.showAttackDisplay({
-               attacker: opponentCard,
-               defender: this.game.player.activeCard,
-               attack: selectedAttack,
-               damage: damage,
-               isPlayer: false,
-               message: `${opponentCard.name} utilise ${selectedAttack.name} sur ${this.game.player.activeCard.name} !`,
-               defenderHP: this.playerHP,
-               maxDefenderHP: this.maxPlayerHP
-            });
-
-            // Après l'affichage de l'attaque adverse, c'est au tour du joueur
-            setTimeout(() => {
-               if (this.game.player.activeCard) {
-                  console.log("🎯 Tour du joueur après l'attaque adverse (double KO) - attaque automatique (même si KO)");
-                  this.performPlayerAutoAttack();
-               }
-            }, 3000); // Attendre 3 secondes après l'affichage de l'attaque adverse
-         } else {
-            console.log("❌ La carte adverse n'a pas d'attaques disponibles");
-         }
-
-      } else {
-         // L'adversaire n'a pas de carte, donc seulement le joueur doit placer
-         console.log("❌ L'adversaire n'a pas de carte, seul le joueur doit placer");
-         this.showPlayerReplacementNotification();
+      // Retirer la carte active de l'adversaire (défausse + zone active à null)
+      if (this.game.opponent.activeCard) {
+         this.game.opponent.discardCard(this.game.opponent.activeCard);
+         this.game.opponent.activeCard = null;
+         this.game.opponentActiveZone.setActiveCard(null);
       }
 
-      // Sauvegarder l'état
+      // Retirer la carte active du joueur (si ce n'est pas déjà fait)
+      if (this.game.player.activeCard) {
+         this.game.player.discardCard(this.game.player.activeCard);
+         this.game.player.activeCard = null;
+         this.game.playerActiveZone.setActiveCard(null);
+      }
+
+      this.showPlayerReplacementNotification();
+      this._pendingOpponentDoubleKO = true;
       if (this.game.save) this.game.save();
    }
 
-   showDoubleKONotification() {
-      const notification = document.createElement('div');
-      notification.id = 'double-ko-notification';
-      notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-
-      notification.innerHTML = `
-         <div class="flex items-center space-x-2">
-            <span>💀💀</span>
-            <span>Double KO ! L'adversaire place sa carte et attaque en premier...</span>
-         </div>
-      `;
-
-      document.body.appendChild(notification);
-
-      // Supprimer automatiquement après 3 secondes
-      setTimeout(() => {
-         if (notification.parentNode) notification.remove();
-      }, 3000);
-   }
-
-   showOpponentReplacementNotification() {
-      const existingNotification = document.getElementById('opponent-replacement-notification');
-      if (existingNotification) existingNotification.remove();
-
-      const notification = document.createElement('div');
-      notification.id = 'opponent-replacement-notification';
-      notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-yellow-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-
-      notification.innerHTML = `
-         <div class="flex items-center space-x-2">
-            <span class="animate-spin">🔄</span>
-            <span>L'adversaire place une nouvelle carte de son banc...</span>
-         </div>
-      `;
-
-      document.body.appendChild(notification);
-   }
-
    showPlayerReplacementNotification() {
-      // Vérifier d'abord la condition de victoire
-      const gameEnded = this.checkWinCondition();
+      const gameEnded = this.checkWin();
       if (gameEnded) {
-         return; // Arrêter si le jeu est terminé
+         return;
       }
 
-      // Vérifier si le joueur a des cartes dans sa main
       if (!this.game.player.hand.cards || this.game.player.hand.cards.length === 0) {
-         console.log("❌ Le joueur n'a plus de cartes dans sa main");
-         // Afficher une notification différente ou gérer la fin de partie
          this.showPlayerNoCardsNotification();
          return;
       }
 
-      const existingNotification = document.getElementById('player-replacement-notification');
-      if (existingNotification) existingNotification.remove();
-
-      const notification = document.createElement('div');
-      notification.id = 'player-replacement-notification';
-      notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-
-      notification.innerHTML = `
-         <div class="flex items-center space-x-2">
-            <span>🃏</span>
-            <span>Glissez une carte de votre main vers la zone active pour continuer !</span>
-         </div>
-      `;
-
-      document.body.appendChild(notification);
-
-      // Supprimer la notification après 10 secondes
-      setTimeout(() => {
-         if (notification.parentNode) notification.remove();
-      }, 10000);
-   }
-
-   showPlayerAttackSelectionNotification() {
-      const existingNotification = document.getElementById('player-attack-selection-notification');
-      if (existingNotification) existingNotification.remove();
-
-      const notification = document.createElement('div');
-      notification.id = 'player-attack-selection-notification';
-      notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-
-      notification.innerHTML = `
-         <div class="flex items-center space-x-2">
-            <span>⚔️</span>
-            <span>Placez une carte pour combattre ! L'adversaire attaquera en premier.</span>
-         </div>
-      `;
-
-      document.body.appendChild(notification);
-
-      setTimeout(() => {
-         if (notification.parentNode) notification.remove();
-      }, 6000);
+      NotificationModal.showChangeCardModal();
    }
 
    showPlayerNoCardsNotification() {
-      // Vérifier d'abord la condition de victoire
-      const gameEnded = this.checkWinCondition();
+      const gameEnded = this.checkWin();
       if (gameEnded) {
-         return; // Arrêter si le jeu est terminé
+         return;
       }
 
-      const notification = document.createElement('div');
-      notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-
-      notification.innerHTML = `
-         <div class="flex items-center space-x-2">
-            <span>❌</span>
-            <span>Vous n'avez plus de cartes dans votre main ! Fin de partie.</span>
-         </div>
-      `;
-
-      document.body.appendChild(notification);
+      NotificationModal.showPlayerNoCardsNotification();
 
       setTimeout(() => {
-         if (notification.parentNode) notification.remove();
-
-         // Forcer la vérification de la condition de victoire une dernière fois
-         const finalGameEnded = this.checkWinCondition();
+         const finalGameEnded = this.checkWin();
          if (!finalGameEnded) {
-            // Si la condition de victoire par défausse n'est pas remplie, déclencher une fin de partie pour manque de cartes
-            console.log("🏆 Fin de partie : le joueur n'a plus de cartes en main");
-            this.showGameEndModal("Défaite", "Vous avez perdu ! Vous n'avez plus de cartes en main.");
+            BattleEndModal.showWithCustomMessage("defeat", "Vous avez perdu ! Vous n'avez plus de cartes en main.", 0, 100, 100, 100, () => {
+               if (this.game.resetGame) {
+                  this.game.resetGame();
+               } else {
+                  location.reload();
+               }
+            });
          }
 
-         // Vérifier aussi la méthode checkDeckOut si elle existe
          if (this.game.checkDeckOut && this.game.checkDeckOut()) {
             return;
          }
@@ -1306,96 +915,64 @@ export class BattleSystem {
    }
 
    async handleOpponentKO() {
-      console.log("🔄 Gestion du KO adverse - Cartes en main:", this.game.opponent.hand.cards.length);
-
       if (this.game.opponent.hand.cards.length > 0) {
-         this.showOpponentReplacementNotification();
-
-         await this.delay(1500);
-
-         try {
-            console.log("🃏 Tentative de placement automatique de carte adverse...");
-            if (this.game.dragAndDrop && this.game.dragAndDrop.autoPlayOpponentCard) {
-               console.log("✅ Méthode autoPlayOpponentCard trouvée, exécution...");
-               this.game.dragAndDrop.autoPlayOpponentCard();
-
-               console.log("🎯 Carte adverse placée:", this.game.opponent.activeCard ? this.game.opponent.activeCard.name : "AUCUNE");
-
-               const notification = document.getElementById('opponent-replacement-notification');
-               if (notification) notification.remove();
-
-               this.opponentAttacksFirst = true;
-               this.resetSelectedAttacks();
-
-               if (this.game.save) this.game.save();
-
-               await this.delay(500);
-
-               if (this.game.opponent.activeCard && this.game.opponent.activeCard.attacks) {
-                  const randomIndex = Math.floor(Math.random() * this.game.opponent.activeCard.attacks.length);
-                  this.selectedOpponentAttack = this.game.opponent.activeCard.attacks[randomIndex];
-
-                  if (this.game.save) this.game.save();
-
-                  if (this.game.checkDeckOut && this.game.checkDeckOut()) {
-                     return;
-                  }
-
-                  // L'adversaire attaque en premier après un KO avec affichage
-                  console.log("🚀 L'adversaire attaque en premier après KO avec affichage");
-
-                  // Calculer les dégâts et appliquer au joueur
-                  const damage = this.calculateDamageFromAttack(this.selectedOpponentAttack);
-                  console.log("💥 Dégâts de l'attaque adverse:", damage);
-
-                  // Initialiser HP joueur si nécessaire
-                  if (!this.playerHP && this.game.player.activeCard) {
-                     this.playerHP = parseInt(this.game.player.activeCard.hp) || 100;
-                     this.maxPlayerHP = this.playerHP;
-                  }
-
-                  // Appliquer les dégâts
-                  this.playerHP = Math.max(0, this.playerHP - damage);
-
-                  // Afficher l'attaque adverse avec showAttackDisplay
-                  setTimeout(() => {
-                     this.showAttackDisplay({
-                        attacker: this.game.opponent.activeCard,
-                        defender: this.game.player.activeCard,
-                        attack: this.selectedOpponentAttack,
-                        damage: damage,
-                        isPlayer: false,
-                        message: `${this.game.opponent.activeCard.name} utilise ${this.selectedOpponentAttack.name} sur ${this.game.player.activeCard.name} !`,
-                        defenderHP: this.playerHP,
-                        maxDefenderHP: this.maxPlayerHP
-                     });
-
-                     // Après l'affichage de l'attaque adverse, c'est au tour du joueur
-                     setTimeout(() => {
-                        if (this.game.player.activeCard) {
-                           console.log("🎯 Tour du joueur après l'attaque adverse - attaque automatique (même si KO)");
-                           this.performPlayerAutoAttack();
-                        }
-                     }, 3000); // Attendre 3 secondes après l'affichage de l'attaque adverse
-                  }, 1000);
-               } else {
-                  console.error("❌ L'adversaire n'a pas de carte active ou d'attaques après placement");
-               }
-
-            } else {
-               console.error("❌ Impossible d'accéder à la méthode autoPlayOpponentCard");
-               const notification = document.getElementById('opponent-replacement-notification');
-               if (notification) notification.remove();
-            }
-         } catch (error) {
-            console.error("❌ Erreur lors du placement de carte adverse:", error);
-            const notification = document.getElementById('opponent-replacement-notification');
-            if (notification) notification.remove();
+         NotificationModal.showOpponentReplacementNotification();
+         await this.delay(3000);
+         if (this.game.player.activeCard && !this._playerAutoAttackInProgress) {
+            await this.playerAutoAttack();
+         } else {
+            await this.handleKOs();
          }
+         const notification = document.getElementById('opponent-replacement-notification');
+         if (notification) notification.remove();
 
-      } else {
-         console.log("❌ Aucune carte disponible pour l'adversaire");
-         // L'adversaire n'a plus de cartes - pas de notification nécessaire
+         this.opponentAttacksFirst = true;
+         this.resetAttacks();
+
+         if (this.game.save) this.game.save();
+
+         await this.delay(500);
+
+         if (this.game.opponent.activeCard && this.game.opponent.activeCard.attacks) {
+            const randomIndex = Math.floor(Math.random() * this.game.opponent.activeCard.attacks.length);
+            this.selectedOpponentAttack = this.game.opponent.activeCard.attacks[randomIndex];
+
+            if (this.game.save) this.game.save();
+
+            if (this.game.checkDeckOut && this.game.checkDeckOut()) {
+               return;
+            }
+
+            // Calculer les dégâts et appliquer au joueur
+            const damage = this.calcDamage(this.selectedOpponentAttack);
+
+            // Initialiser HP joueur si nécessaire
+            if (!this.playerHP && this.game.player.activeCard) {
+               this.playerHP = parseInt(this.game.player.activeCard.hp) || 100;
+               this.maxPlayerHP = this.playerHP;
+            }
+
+            this.playerHP = Math.max(0, this.playerHP - damage);
+
+            setTimeout(() => {
+               this.showAttackDisplay({
+                  attacker: this.game.opponent.activeCard,
+                  defender: this.game.player.activeCard,
+                  attack: this.selectedOpponentAttack,
+                  damage: damage,
+                  isPlayer: false,
+                  message: `${this.game.opponent.activeCard.name} utilise ${this.selectedOpponentAttack.name} sur ${this.game.player.activeCard.name} !`,
+                  defenderHP: this.playerHP,
+                  maxDefenderHP: this.maxPlayerHP
+               });
+
+               setTimeout(() => {
+                  if (this.game.player.activeCard && !this._playerAutoAttackInProgress) {
+                     this.playerAutoAttack();
+                  }
+               }, 3000);
+            }, 1000);
+         }
       }
    }
 }

@@ -1,5 +1,4 @@
-export class ActiveCardZone 
-{
+export class ActiveCardZone {
    constructor(container, cardModal = null, isPlayerZone = false) {
       this.container = container;
       this.cardModal = cardModal;
@@ -21,6 +20,25 @@ export class ActiveCardZone
    setActiveCard(card) {
       this.activeCard = card;
       this.render();
+      // Fermer toute modal d'attaque résiduelle
+      const oldModal = document.querySelector('.attack-choice-modal, .attack-modal');
+      if (oldModal) oldModal.remove();
+      // N'ouvre la modal d'attaque que si les deux Pokémon sont vivants
+      if (this.isPlayerZone && this.activeCard && window?.game?.battleSystem) {
+         setTimeout(() => {
+            const playerCard = window.game.player.activeCard;
+            const opponentCard = window.game.opponent.activeCard;
+            const battleSystem = window.game.battleSystem;
+            if (
+               playerCard && opponentCard &&
+               (!battleSystem.playerHP || battleSystem.playerHP > 0) &&
+               (!battleSystem.opponentHP || battleSystem.opponentHP > 0) &&
+               !battleSystem.isInBattle
+            ) {
+               battleSystem.showAttackModal(playerCard, true);
+            }
+         }, 100);
+      }
    }
 
    getActiveCard() {
@@ -42,7 +60,6 @@ export class ActiveCardZone
       this.clear();
 
       if (!this.activeCard) {
-         // Afficher le placeholder seulement pour la zone du joueur
          if (this.isPlayerZone) {
             this.renderPlaceholder();
          }
@@ -75,7 +92,6 @@ export class ActiveCardZone
          <p style="text-align: center; color: #fbbf24; font-weight: bold; font-size: 0.875rem;">Déposez votre carte ici</p>
       `;
       this.container.appendChild(placeholder);
-      console.log("✅ Placeholder ajouté au container:", this.container);
    }
 
    renderActiveCard() {
