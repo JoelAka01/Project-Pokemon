@@ -112,7 +112,8 @@ export class BattleSystem {
 
          if (this.opponentAttacksFirst) {
             this.battlePhase = 'opponent-attack';
-            await this.opponentAttack(opponentCard, playerCard);
+            await this.opponentAttack();
+
             await this.delay(1000);
 
             // Si le joueur est KO, il peut riposter (riposte post-KO)
@@ -139,7 +140,8 @@ export class BattleSystem {
          await this.delay(1000);
 
          this.battlePhase = 'opponent-attack';
-         await this.opponentAttack(opponentCard, playerCard);
+         await this.opponentAttack();
+
          await this.delay(1000);
 
 
@@ -678,46 +680,37 @@ export class BattleSystem {
 
       // Si le joueur est KO, il doit quand même finir d'attaquer
       if (this.playerHP <= 0) {
-         // Fermer la modal d'attaque si elle est ouverte
-         const attackDisplay = document.getElementById('battle-attack-display');
-         if (attackDisplay) attackDisplay.remove();
+         // ✅ Vérifier si double KO
+         if (this.opponentHP <= 0) {
+            await this.handleDoubleKO();
+            return;
+         }
 
-         // Empêcher double appel de playerAutoAttack
+         // Sinon, KO joueur seul
          if (this.game.player.activeCard && this.game.opponent.activeCard && !this._playerAutoAttackInProgress) {
             await this.playerAutoAttack();
          }
 
-         // Après l'attaque du joueur, gérer le KO
          if (this.game.player.activeCard) {
             this.game.player.discardPile.push(this.game.player.activeCard);
             this.game.player.activeCard = null;
             this.game.playerActiveZone.setActiveCard(null);
 
-            // Vérifier immédiatement la condition de victoire après ajout à la défausse
             const gameEnded = this.checkWin();
-            if (gameEnded) {
-               return; // Arrêter immédiatement si le jeu est terminé
-            }
+            if (gameEnded) return;
          }
 
-         // Réinitialiser les HP et attaques
          this.resetBattleHP();
          this.resetAttacks();
-
-         // Rafraîchir l'UI
          this.refreshUI();
 
-         // Vérifier la condition de victoire après le KO du joueur
          const gameEnded = this.checkWin();
-         if (gameEnded) {
-            return; // Arrêter le traitement si le jeu est terminé
-         }
+         if (gameEnded) return;
 
-         // Sauvegarder et afficher notification
          if (this.game.save) this.game.save();
          this.showPlayerReplacementNotification();
-
-      } else {
+      }
+      else {
          // Le joueur survit, c'est maintenant à son tour d'attaquer
 
          // Réinitialiser les attaques pour le prochain tour
@@ -806,13 +799,14 @@ export class BattleSystem {
 
       await this.delay(3000);
 
-      // Vérifier si l'adversaire est KO
-      if (this.opponentHP <= 0) {
+      // Nouveau bloc de vérification après attaque
+      if (this.playerHP <= 0 && this.opponentHP <= 0) {
+         await this.handleDoubleKO();
+      } else if (this.opponentHP <= 0 || this.playerHP <= 0) {
          await this.handleKOs();
       } else {
-         // Si ce n'est pas une riposte, continuer le combat normal ou afficher les options
          if (!isRiposte) {
-            this.showChangeCardModal();
+            this.showChangeModal();
          }
       }
 
@@ -834,18 +828,30 @@ export class BattleSystem {
 
    async handleDoubleKO() {
       // Retirer les deux cartes actives (joueur et adversaire) et mettre à jour l'UI
+      // Toujours retirer la carte du joueur si présente
       if (this.game.player.activeCard) {
          this.game.player.discardCard(this.game.player.activeCard);
          this.game.player.activeCard = null;
       }
+      // Toujours retirer la carte adverse si présente
       if (this.game.opponent.activeCard) {
          this.game.opponent.discardCard(this.game.opponent.activeCard);
          this.game.opponent.activeCard = null;
       }
+      // Si la carte adverse n'est plus dans activeCard mais reste dans la zone active, forcer le retrait visuel et logique
       if (this.game.opponentActiveZone && this.game.opponentActiveZone.activeCard) {
+         // On retire la carte de la zone active adverse et on la met dans la défausse si ce n'est pas déjà fait
+         const card = this.game.opponentActiveZone.activeCard;
+         if (!this.game.opponent.discardPile.includes(card)) {
+            this.game.opponent.discardCard(card);
+         }
          this.game.opponentActiveZone.setActiveCard(null);
       }
       if (this.game.playerActiveZone && this.game.playerActiveZone.activeCard) {
+         const card = this.game.playerActiveZone.activeCard;
+         if (!this.game.player.discardPile.includes(card)) {
+            this.game.player.discardCard(card);
+         }
          this.game.playerActiveZone.setActiveCard(null);
       }
       if (this.game.renderDiscardPiles) this.game.renderDiscardPiles();
