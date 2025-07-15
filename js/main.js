@@ -23,7 +23,7 @@ function toggleLoadingOverlay(show = true) {
 
 async function initGame() {
    const types = ["fire", "water", "electric", "psychic", "grass"];
-   const cardsPerType = 2;
+   const cardsPerType = 2; // Augmenté de 2 à 6 pour avoir assez de cartes (30 total)
 
    try {
       // Afficher l'overlay de chargement
@@ -32,8 +32,8 @@ async function initGame() {
       console.log("Chargement des decks...");
       const playerDeck = await fetchMixedDeck(types, cardsPerType);
       const opponentDeck = await fetchMixedDeck(types, cardsPerType);
-      console.log("Decks chargés avec succès !");
 
+      console.log(`✅ Decks créés - Joueur: ${playerDeck.length} cartes, Adversaire: ${opponentDeck.length} cartes`);
       console.log("Initialisation du jeu...");
       const game = new Game(playerDeck, opponentDeck);
 
@@ -54,18 +54,15 @@ async function fetchMixedDeck(types, cardsPerType) {
    const loadingText = document.querySelector('#loading-overlay p');
    const originalText = loadingText ? loadingText.textContent : '';
 
+
+   if (loadingText) {
+      loadingText.textContent = 'Chargement des cartes...';
+   }
+
    for (let i = 0; i < types.length; i++) {
       const type = types[i];
-
-      // Mise à jour du texte de chargement pour montrer la progression
-      if (loadingText) {
-         loadingText.textContent = `Chargement des cartes ${type} (${i + 1}/${types.length})`;
-      }
-
       const cards = await Card.fetchCards({ type, subtype: "Basic", pageSize: cardsPerType });
       allCards.push(...cards);
-
-      // Petit délai pour que l'utilisateur puisse voir la progression
       await new Promise(resolve => setTimeout(resolve, 300));
    }
 

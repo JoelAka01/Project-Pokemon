@@ -1,3 +1,5 @@
+import { pokemons } from "./pokemons.js";
+
 export class Card {
    constructor(id, name, imageUrl, hp = 0, types = [], attacks = [], weaknesses = []) {
       this.id = id;
@@ -16,50 +18,29 @@ export class Card {
       }));
    }
 
-   static async fetchCards({ type = "fire", subtype = "Basic", pageSize = 10 } = {}) {
-      const API_KEY = '420c0510-611c-464f-bf5b-b39949f54466';
+   static async fetchCards({ type = "Fire", pageSize = 10 } = {}) {
+      // Filtrer les Pokémon par type (insensible à la casse)
+      const filtered = pokemons.filter(pokemon =>
+         !type || (
+            pokemon.types &&
+            pokemon.types.some(t => t.toLowerCase() === type.toLowerCase())
+         )
+      );
 
-      const query = [`types:${type}`];
-      if (subtype) query.push(`subtypes:${subtype}`);
+      // Limiter le nombre de résultats (si pageSize précisé)
+      const sliced = filtered.slice(0, pageSize);
 
-      try {
-         const response = await fetch(
-            `https://api.pokemontcg.io/v2/cards?q=${query.join(" ")}&pageSize=${pageSize}`,
-            { headers: { 'X-Api-Key': API_KEY } }
-         );
-
-         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-         }
-
-         const data = await response.json();
-
-         return data.data.map(card => new Card(
+      // Retourner des instances de Card
+      return sliced.map(card =>
+         new Card(
             card.id,
             card.name,
-            card.images.small,
+            card.imageUrl,
             card.hp,
             card.types,
-            card.attacks || [],
-            card.weaknesses || []
-         ));
-
-      } catch (error) {
-         console.error("Erreur lors de la récupération des cartes:", error);
-         return [];
-      }
-   }
-
-
-   // Méthode pour afficher les informations de la carte
-   getInfo() {
-      return {
-         id: this.id,
-         name: this.name,
-         hp: this.hp,
-         types: this.types,
-         attacks: this.attacks,
-         weaknesses: this.weaknesses
-      };
+            card.attacks,
+            card.weaknesses
+         )
+      );
    }
 }

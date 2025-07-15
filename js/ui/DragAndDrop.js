@@ -346,13 +346,12 @@ export class DragAndDropManager {
          const playerCard = this.game.player.activeCard;
          const opponentCard = this.game.opponent.activeCard;
 
-         // Si les deux joueurs ont une carte active, déclencher le choix d'attaque
+         // Si les deux joueurs ont une carte active, déclencher la vraie modal d'attaque
          if (playerCard && opponentCard && this.game.battleSystem) {
-            this.game.battleSystem.showAttackChoiceModal(playerCard, true);
+            this.game.battleSystem.showAttackModal(playerCard, true);
          } else if (playerCard && this.game.battleSystem) {
             // Si seul le joueur a une carte, lui permettre de choisir son attaque
-            // L'adversaire choisira automatiquement quand il aura une carte
-            this.game.battleSystem.showAttackChoiceModal(playerCard, true);
+            this.game.battleSystem.showAttackModal(playerCard, true);
          }
       }, 100);
    }

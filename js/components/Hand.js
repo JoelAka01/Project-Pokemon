@@ -126,7 +126,7 @@ export class Hand {
 
    setupCardEvents(card, cardObj, index) {
       if (this.cardModal) {
-         card.addEventListener("click", () => this.cardModal.show(cardObj));
+         card.addEventListener("click", () => this.cardModal.showCardModal(cardObj));
       }
 
       if (this.dragManager) {

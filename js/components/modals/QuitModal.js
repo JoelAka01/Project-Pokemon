@@ -50,6 +50,8 @@ export class QuitModal {
 
       if (confirmBtn) {
          confirmBtn.onclick = () => {
+            // Effacer le localStorage lors de la confirmation
+            localStorage.clear();
             this.hide();
             if (onConfirm) onConfirm();
          };

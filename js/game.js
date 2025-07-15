@@ -52,7 +52,9 @@ export class Game {
          playerActive: this.playerActive,
          opponentActive: this.opponentActive,
          handContainer: this.handContainer,
-         deckContainer: this.deckContainer
+         deckContainer: this.deckContainer,
+         opponentHandContainer: this.opponentHandContainer,
+         opponentDeckContainer: this.opponentDeckContainer
       };
 
       const missingElements = Object.entries(criticalElements)
@@ -63,6 +65,8 @@ export class Game {
          console.error("❌ Éléments DOM critiques manquants:", missingElements);
          throw new Error(`Éléments DOM manquants: ${missingElements.join(', ')}`);
       }
+
+      console.log("✅ Tous les éléments DOM critiques trouvés");
    }
 
    initializeGameComponents() {
@@ -105,8 +109,25 @@ export class Game {
    }
 
    synchronizeComponentData() {
+      console.log("🔄 === SYNCHRONISATION DES COMPOSANTS ===");
+
+      console.log("📊 AVANT synchronisation:");
+      console.log(`   👤 Player.hand.cards: ${this.player.hand.cards.length} cartes`);
+      console.log(`   🤖 Opponent.hand.cards: ${this.opponent.hand.cards.length} cartes`);
+
+      // Synchroniser les mains
       this.playerHand.cards = this.player.hand.cards;
       this.opponentHand.cards = this.opponent.hand.cards;
+
+      console.log("📊 APRÈS synchronisation:");
+      console.log(`   👤 PlayerHand.cards: ${this.playerHand.cards.length} cartes`);
+      console.log(`   🤖 OpponentHand.cards: ${this.opponentHand.cards.length} cartes`);
+
+      // Synchroniser les pioches
+      this.playerDeck.setCards(this.player.deck);
+      this.opponentDeck.setCards(this.opponent.deck);
+
+      console.log(`📦 Pioches - Joueur: ${this.player.deck.length}, Adversaire: ${this.opponent.deck.length}`);
    }
 
    initializeGameSettings() {
@@ -184,33 +205,58 @@ export class Game {
    }
 
    drawInitialCards(player, count = 5) {
-      console.log(`🎯 Tirage initial pour ${player === this.player ? 'joueur' : 'adversaire'}`);
+      const playerType = player === this.player ? 'joueur' : 'adversaire';
+      console.log(`🎯 === TIRAGE INITIAL ${playerType.toUpperCase()} ===`);
+      console.log(`📦 Pioche avant tirage: ${player.deck.length} cartes`);
+      console.log(`🖐️ Main avant tirage: ${player.hand.cards.length} cartes`);
 
       for (let i = 0; i < count; i++) {
+         console.log(`🎲 Tentative de tirage carte ${i + 1}/${count} pour ${playerType}...`);
          const drawnCard = player.drawCard();
          if (!drawnCard) {
-            console.log(`❌ Impossible de tirer la carte ${i + 1}`);
+            console.log(`❌ Impossible de tirer la carte ${i + 1} pour ${playerType}`);
+            console.log(`   📊 État: Pioche=${player.deck.length}, Main=${player.hand.cards.length}/${player.hand.maxSize}`);
             break;
+         } else {
+            console.log(`✅ Carte ${i + 1} tirée pour ${playerType}: ${drawnCard.name}`);
          }
       }
+
+      console.log(`📦 Pioche après tirage: ${player.deck.length} cartes`);
+      console.log(`🖐️ Main après tirage: ${player.hand.cards.length} cartes`);
+      console.log(`🔍 Noms des cartes en main: ${player.hand.cards.map(c => c.name).join(', ')}`);
    }
 
    // === RENDU ET AFFICHAGE ===
 
    renderPlayerCards() {
-      console.log("🎨 Rendu des cartes du joueur");
+      console.log("🎨 === RENDU CARTES JOUEUR ===");
+      console.log(`📋 Cartes à afficher pour le joueur: ${this.player.hand.cards.length}`);
+
+      // S'assurer que les données sont synchronisées
       this.playerHand.cards = this.player.hand.cards;
       this.playerDeck.setCards(this.player.deck);
+
+      // Rendu des composants
       this.playerHand.render();
       this.playerDeck.render();
+
+      console.log(`✅ Rendu terminé - Joueur: ${this.handContainer.children.length} éléments DOM créés`);
    }
 
    renderOpponentCards() {
-      console.log("🎨 Rendu des cartes de l'adversaire");
+      console.log("🎨 === RENDU CARTES ADVERSAIRE ===");
+      console.log(`📋 Cartes à afficher pour l'adversaire: ${this.opponent.hand.cards.length}`);
+
+      // S'assurer que les données sont synchronisées
       this.opponentHand.cards = this.opponent.hand.cards;
       this.opponentDeck.setCards(this.opponent.deck);
+
+      // Rendu des composants
       this.opponentHand.render();
       this.opponentDeck.render();
+
+      console.log(`✅ Rendu terminé - Adversaire: ${this.opponentHandContainer.children.length} éléments DOM créés`);
    }
 
    renderCards() {
@@ -323,10 +369,17 @@ export class Game {
       const gameLoaded = this.loadGameState();
 
       if (!gameLoaded) {
-         console.log("🎮 Nouveau jeu - tirage des cartes initiales...");
-         [this.player, this.opponent].forEach((player, index) => {
-            this.drawInitialCards(player);
-         });
+         console.log("🎮 === NOUVEAU JEU - TIRAGE DES CARTES INITIALES ===");
+
+         // Tirer pour le joueur
+         console.log("🎯 Tirage pour le joueur...");
+         this.drawInitialCards(this.player);
+
+         // Tirer pour l'adversaire
+         console.log("🎯 Tirage pour l'adversaire...");
+         this.drawInitialCards(this.opponent);
+
+         console.log(`✅ Tirage terminé - Joueur: ${this.player.hand.cards.length} cartes, Adversaire: ${this.opponent.hand.cards.length} cartes`);
 
          if (hadCorruptedData) {
             this.showStorageErrorMessage();
@@ -340,10 +393,18 @@ export class Game {
    }
 
    finishGameInitialization() {
+      console.log("🎯 === FINALISATION DE L'INITIALISATION ===");
+
+      // Synchroniser les données avant le rendu
+      this.synchronizeComponentData();
+
       // Configuration finale
       this.addQuitButton();
       this.timer.start(this.drawCooldown, this.timeLeft);
       this.addDropListeners(this.playerActive, this.opponentActive, this.handContainer);
+
+      // Rendre toutes les cartes
+      console.log("🎨 Rendu des cartes...");
       this.renderCards();
 
       // Rendu des cartes actives
