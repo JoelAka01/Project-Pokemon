@@ -5,232 +5,213 @@
    <meta charset="UTF-8" />
    <meta name="viewport" content="width=device-width, initial-scale=1" />
    <script src="https://cdn.tailwindcss.com"></script>
-   <title>Pokémon TCG</title>
+   <title>Pokémon TCG - Page d'accueil</title>
    <link rel="stylesheet" href="css/style.css" />
 </head>
 
 <body background="img/U02M2xPy-Fond-Decran-Pikachu-3.webp"
    class="min-h-screen bg-cover bg-center font-sans text-gray-800">
-   <!-- Header -->
-   <header class="flex items-center justify-between py-4 px-6">
-      <a href="landing.html" class="text-white hover:text-yellow-300 transition-colors text-sm">
-         ← Retour à l'accueil
-      </a>
-      <img src="img/logo.png" alt="Logo Pokémon Trading Card Game" class="h-24 object-contain drop-shadow-lg" />
-      <div class="w-24"></div> <!-- Spacer pour centrer le logo -->
+
+   <!-- Navigation Header -->
+   <header class="bg-black bg-opacity-50 backdrop-blur-sm">
+      <div class="container mx-auto px-6 py-4 flex items-center justify-between">
+         <div class="flex items-center">
+            <img src="img/logo.png" alt="Logo Pokémon Trading Card Game" class="h-16 object-contain drop-shadow-lg" />
+            <h1 class="ml-4 text-2xl font-bold text-white">Pokémon TCG</h1>
+         </div>
+         <nav class="hidden md:flex items-center space-x-6">
+            <a href="#about" class="text-white hover:text-yellow-300 transition-colors">À propos</a>
+            <a href="#features" class="text-white hover:text-yellow-300 transition-colors">Fonctionnalités</a>
+            <a href="game.html" class="bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-2 px-6 rounded-full transition-colors">
+               Jouer maintenant
+            </a>
+         </nav>
+      </div>
    </header>
-   <!-- Loading Overlay -->
-   <div id="loading-overlay"
-      class="fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm flex flex-col items-center justify-center z-50">
-      <div class="w-32 h-32 relative animate-bounce mb-8">
-         <img src="img/logo.png" alt="Chargement" class="w-full h-full object-contain drop-shadow-lg" />
-      </div>
 
-      <div class="flex flex-col items-center justify-center my-6">
-         <div class="pokemon-loader"></div>
-         <div class="h-6"></div> <!-- Espacement -->
-      </div>
-
-      <p class="text-white text-xl font-bold mt-4">Chargement des cartes Pokémon...</p>
-      <p class="text-yellow-300 text-sm mt-2">Veuillez patienter pendant que nous récupérons les données</p>
-   </div>
-
-   <!-- Plateau de jeu -->
-   <div id="game-area"
-      class="flex flex-col gap-8 px-8 py-4 items-center max-w-7xl mx-auto  backdrop-blur-sm rounded-xl shadow-2xl">
-      <div id="timer-display"
-         class="text-center text-sm text-white font-bold bg-gradient-to-r from-blue-700 to-red-600 py-1 px-4 rounded-full shadow-lg mt-2">
-      </div> <!-- Ligne Adversaire -->
-      <div class="flex justify-between items-center w-full max-w-6xl">
-         <!-- Main adverse -->
-         <div>
-            <h2 class="font-bold mb-2 text-center text-white drop-shadow">Main de l'adversaire</h2>
-            <div id="opponent-hand"
-               class="flex space-x-[-15px] bg-gradient-to-br from-blue-800/40 to-blue-900/60 p-3 rounded-lg shadow-lg border border-blue-700 min-h-[120px] min-w-[300px]">
-               <!-- Cartes dos vers toi -->
-            </div>
-         </div>
-
-         <!-- Pioche adverse -->
-         <div class="flex flex-col items-center">
-            <h2 class="font-bold mb-1 text-white drop-shadow">Pioche adverse</h2>
-            <div id="opponent-deck" class="flex flex-col items-center space-y-2 relative">
-               <div class="absolute -inset-1 bg-blue-700/30 rounded-lg blur"></div>
-               <!-- Injectée en JS -->
-            </div>
-         </div>
-
-         <!-- Défausse adverse -->
-         <div class="flex flex-col items-center">
-            <h2 class="font-bold mb-1 text-white drop-shadow">Défausse adverse</h2>
-            <div id="opponent-discard" class="flex flex-col items-center space-y-2 relative">
-               <div class="absolute -inset-1 bg-red-700/30 rounded-lg blur"></div>
-               <!-- Injectée en JS -->
-            </div>
-         </div>
-      </div> <!-- Zone de combat -->
-      <div id="battle-zone"
-         class="w-full flex justify-around items-center border-t border-b border-white/30 py-8 bg-gradient-to-r from-transparent via-white/10 to-transparent">
-         <div class="text-center">
-            <h3 class="font-bold mb-2 text-white drop-shadow">Adversaire</h3>
-
-            <div id="opponent-active"
-               class="min-h-[200px] w-[150px] border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center bg-blue-900/30 shadow-lg backdrop-blur-sm hover:border-blue-300 transition-all duration-300">
-            </div>
-
-
-         </div>
-
-         <div id="results" class="px-4 py-2 bg-white/20 backdrop-blur-md rounded-xl shadow-lg text-center">
-            <span class="text-white font-bold text-lg">VS</span>
-         </div>
-
-         <div class="text-center">
-            <h3 class="font-bold mb-2 text-white drop-shadow">Toi</h3>
-
-            <div id="player-active"
-               class="min-h-[200px] w-[150px] border-2 border-dashed border-green-400 rounded-lg flex items-center justify-center bg-green-900/30 shadow-lg backdrop-blur-sm hover:border-green-300 transition-all duration-300">
-            </div>
-
-            <div id="attack-buttons" class="flex flex-wrap justify-center mt-3 gap-2"></div>
-         </div>
-      </div>
-
-      <!-- Ligne Joueur -->
-      <div class="flex justify-between items-center w-full max-w-6xl">
-         <!-- Ta main -->
-         <div>
-            <h2 class="font-bold mb-2 text-center text-white drop-shadow">Ta main</h2>
-            <div id="hand"
-               class="flex space-x-[-10px] hover:space-x-2 transition-all duration-300 bg-gradient-to-br from-green-800/40 to-green-900/60 p-3 rounded-lg shadow-lg border border-green-700 min-h-[150px] min-w-[300px]">
-               <!-- Cartes visibles -->
-            </div>
-         </div>
-
-         <!-- Ta pioche -->
-         <div class="flex flex-col items-center">
-            <h2 class="font-bold mb-1 text-white drop-shadow">Piocher une carte</h2>
-            <div id="deck" class="flex flex-col items-center space-y-2 relative">
-               <div class="absolute -inset-1 bg-green-700/30 rounded-lg blur"></div>
-               <!-- Injectée en JS -->
-            </div>
-         </div>
-
-         <!-- Ta défausse -->
-         <div class="flex flex-col items-center">
-            <h2 class="font-bold mb-1 text-white drop-shadow">Ta défausse</h2>
-            <div id="player-discard" class="flex flex-col items-center space-y-2 relative">
-               <div class="absolute -inset-1 bg-red-700/30 rounded-lg blur"></div>
-               <!-- Injectée en JS -->
+   <!-- Hero Banner -->
+   <section class="relative py-20 md:py-32">
+      <div class="container mx-auto px-6 text-center">
+         <div class="max-w-4xl mx-auto">
+            <h1 class="text-5xl md:text-7xl font-extrabold text-white drop-shadow-2xl mb-6">
+               Pokémon
+               <span class="text-yellow-400">Trading Card Game</span>
+            </h1>
+            <p class="text-xl md:text-2xl text-white drop-shadow-lg mb-8 leading-relaxed">
+               Découvrez l'univers passionnant des cartes Pokémon dans cette adaptation web interactive
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+               <a href="game.html" 
+                  class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4 px-8 rounded-full shadow-xl transition-all duration-300 transform hover:scale-105">
+                  Commencer à jouer
+               </a>
+               <a href="#about" 
+                  class="bg-white bg-opacity-20 backdrop-blur-sm border-2 border-white text-white hover:bg-opacity-30 font-bold text-lg py-4 px-8 rounded-full transition-all duration-300">
+                  En savoir plus
+               </a>
             </div>
          </div>
       </div>
+   </section>
 
-   </div>
-   <div id="card-modal"
-      class="hidden fixed inset-0 bg-black bg-opacity-80 backdrop-blur-md flex items-center justify-center z-50">
-      <div id="modal-content"
-         class="bg-gradient-to-br from-yellow-100 to-blue-100 p-6 rounded-xl max-w-4xl w-full mx-4 shadow-2xl border-4 border-yellow-400 transform transition-all duration-300 scale-95 opacity-90 hover:scale-100 hover:opacity-100">
-         <!-- En-tête avec nom du Pokémon et bouton fermer -->
-         <div
-            class="flex justify-between items-center mb-4 bg-gradient-to-r from-blue-600 to-red-500 p-2 rounded-lg shadow-lg">
-            <h2 id="modal-title" class="text-2xl font-extrabold text-white drop-shadow-md px-4"></h2>
-            <button id="close-modal"
-               class="bg-white rounded-full p-1 text-gray-800 hover:text-red-600 hover:bg-gray-200 transition-all duration-200">
-               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-               </svg>
-            </button>
-         </div>
-
-         <!-- Contenu principal en flex -->
-         <div class="flex flex-col lg:flex-row gap-6">
-            <!-- Image de la carte avec effet spécial -->
-            <div class="relative group flex-shrink-0">
-               <!-- Effet de halo dynamique -->
-               <div id="modal-card-halo"
-                  class="absolute -inset-1 bg-gradient-to-r from-yellow-400 to-blue-500 rounded-lg blur opacity-40 group-hover:opacity-100 transition duration-500 group-hover:duration-200">
-               </div>
-
-               <!-- Image avec animation -->
-               <img id="modal-img"
-                  class="relative w-80 h-auto rounded-lg shadow-xl transform transition-all duration-500 hover:scale-105 z-10"
-                  src="" alt="Carte Pokémon">
-
-               <!-- Indicateur de rareté -->
-               <div id="modal-rarity"
-                  class="absolute bottom-2 right-2 bg-gradient-to-r from-purple-600 to-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold z-20 shadow-lg">
-                  Rare
-               </div>
-            </div>
-
-            <!-- Infos de la carte -->
-            <div class="flex-grow flex flex-col gap-4">
-               <!-- Stats principales -->
-               <div class="bg-white/70 p-4 rounded-xl shadow-lg border-2 border-gray-300">
-                  <div class="flex items-center gap-2 mb-3">
-                     <div id="pokemon-type-badges" class="flex gap-1"></div>
-                     <div
-                        class="ml-auto bg-gradient-to-r from-red-500 to-pink-600 text-white px-3 py-1 rounded-full font-bold">
-                        HP: <span id="modal-hp" class="text-yellow-300"></span>
-                     </div>
-                  </div>
-
-                  <!-- Description si disponible -->
-                  <div id="modal-description"
-                     class="italic text-gray-700 bg-gray-100/80 p-2 rounded-lg mb-2 text-center">
-                  </div>
-
-                  <!-- Container pour les infos détaillées -->
-                  <div id="modal-info" class="grid gap-3"></div>
-               </div>
-
-               <!-- Section des attaques avec un style spécial -->
-               <div id="modal-attacks-section"
-                  class="bg-gradient-to-r from-red-100 to-orange-100 p-4 rounded-xl shadow-lg border-2 border-red-300">
-                  <h3 class="text-xl font-bold text-red-800 flex items-center gap-2 mb-3">
-                     <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                           d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z"
-                           clip-rule="evenodd"></path>
-                     </svg>
-                     Attaques
+   <!-- About Section -->
+   <section id="about" class="py-16 bg-black bg-opacity-60 backdrop-blur-sm">
+      <div class="container mx-auto px-6">
+         <div class="max-w-6xl mx-auto">
+            <h2 class="text-4xl md:text-5xl font-bold text-center text-white mb-12">
+               À propos du projet
+            </h2>
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+               <div class="text-white">
+                  <h3 class="text-2xl font-bold mb-6 text-yellow-400">
+                     Qu'est-ce que Pokémon TCG Web ?
                   </h3>
-                  <div id="modal-attacks" class="space-y-3"></div>
+                  <p class="text-lg leading-relaxed mb-6">
+                     Ce projet est une adaptation web interactive du célèbre jeu de cartes à collectionner Pokémon. 
+                     Développé comme projet éducatif, il permet aux joueurs de découvrir ou redécouvrir l'univers 
+                     stratégique des cartes Pokémon directement depuis leur navigateur.
+                  </p>
+                  <p class="text-lg leading-relaxed mb-6">
+                     L'application utilise l'API officielle Pokémon pour récupérer les données authentiques des cartes, 
+                     garantissant une expérience fidèle au jeu original avec des illustrations et statistiques officielles.
+                  </p>
+
+               </div>
+               <div class="flex justify-center">
+                  <img src="img/logo.png" alt="Pokémon TCG" 
+                       class="w-80 h-80 object-contain drop-shadow-2xl" />
+               </div>
+            </div>
+         </div>
+      </div>
+   </section>
+
+   <!-- Features Section -->
+   <section id="features" class="py-16 bg-white bg-opacity-10 backdrop-blur-sm">
+      <div class="container mx-auto px-6">
+         <div class="max-w-6xl mx-auto">
+            <h2 class="text-4xl md:text-5xl font-bold text-center text-white mb-12">
+               Fonctionnalités du jeu
+            </h2>
+            <div class="grid md:grid-cols-3 gap-8">
+               <!-- Feature 1 -->
+               <div class="bg-white bg-opacity-20 backdrop-blur-sm p-6 rounded-xl shadow-xl border border-white border-opacity-30">
+                  <div class="text-center">
+                     <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                 d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                     </div>
+                     <h3 class="text-xl font-bold text-white mb-3">Cartes authentiques</h3>
+                     <p class="text-gray-200">
+                        Plus de 1000 cartes Pokémon officielles récupérées via l'API Pokémon TCG avec 
+                        toutes leurs statistiques et illustrations originales.
+                     </p>
+                  </div>
                </div>
 
-               <!-- Section faiblesses/résistances -->
-               <div class="grid grid-cols-2 gap-4">
-                  <div id="modal-weaknesses-section"
-                     class="bg-gradient-to-r from-red-100 to-red-200 p-3 rounded-xl shadow-lg border-2 border-red-400">
-                     <h3 class="text-lg font-bold text-red-800 mb-2 flex items-center gap-1">
-                        <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
-                           <path fill-rule="evenodd"
-                              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                              clip-rule="evenodd" />
+               <!-- Feature 2 -->
+               <div class="bg-white bg-opacity-20 backdrop-blur-sm p-6 rounded-xl shadow-xl border border-white border-opacity-30">
+                  <div class="text-center">
+                     <div class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                 d="M13 10V3L4 14h7v7l9-11h-7z" />
                         </svg>
-                        Faiblesses
-                     </h3>
-                     <div id="modal-weaknesses" class="flex flex-wrap gap-2"></div>
+                     </div>
+                     <h3 class="text-xl font-bold text-white mb-3">Combat stratégique</h3>
+                     <p class="text-gray-200">
+                        Système de combat fidèle au jeu original avec calculs de dégâts, 
+                        faiblesses, résistances et effets spéciaux des attaques.
+                     </p>
                   </div>
-                  <div id="modal-resistances-section"
-                     class="bg-gradient-to-r from-blue-100 to-blue-200 p-3 rounded-xl shadow-lg border-2 border-blue-400">
-                     <h3 class="text-lg font-bold text-blue-800 mb-2 flex items-center gap-1">
-                        <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
-                           <path fill-rule="evenodd"
-                              d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
-                              clip-rule="evenodd" />
+               </div>
+
+               <!-- Feature 3 -->
+               <div class="bg-white bg-opacity-20 backdrop-blur-sm p-6 rounded-xl shadow-xl border border-white border-opacity-30">
+                  <div class="text-center">
+                     <div class="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                 d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                         </svg>
-                        Résistances
-                     </h3>
-                     <div id="modal-resistances" class="flex flex-wrap gap-2"></div>
+                     </div>
+                     <h3 class="text-xl font-bold text-white mb-3">Interface intuitive</h3>
+                     <p class="text-gray-200">
+                        Interface moderne et responsive avec drag & drop, modales détaillées 
+                        et animations fluides pour une expérience utilisateur optimale.
+                     </p>
                   </div>
                </div>
             </div>
          </div>
       </div>
-   </div> <!-- Script JS -->
-   <script src="js/main.js" type="module"></script>
+   </section>
+
+   <!-- Technology Section -->
+   <section class="py-16  backdrop-blur-sm">
+      <div class="container mx-auto px-6">
+         <div class="max-w-6xl mx-auto">
+            <h2 class="text-4xl md:text-5xl font-bold text-center text-white mb-12">
+               Technologies utilisées
+            </h2>
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+               <!-- JavaScript -->
+               <div class="text-center">
+                  <div class="w-20 h-20 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                     <span class="text-2xl font-bold text-black">JS</span>
+                  </div>
+                  <h3 class="text-lg font-bold text-white mb-2">JavaScript ES6+</h3>
+                  <p class="text-gray-300">Modules, classes, async/await</p>
+               </div>
+
+               <!-- HTML5 -->
+               <div class="text-center">
+                  <div class="w-20 h-20 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                     <span class="text-2xl font-bold text-white">HTML</span>
+                  </div>
+                  <h3 class="text-lg font-bold text-white mb-2">HTML5</h3>
+                  <p class="text-gray-300">Structure sémantique moderne</p>
+               </div>
+
+               <!-- Tailwind CSS -->
+               <div class="text-center">
+                  <div class="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                     <span class="text-2xl font-bold text-white">CSS</span>
+                  </div>
+                  <h3 class="text-lg font-bold text-white mb-2">Tailwind CSS</h3>
+                  <p class="text-gray-300">Framework CSS utilitaire</p>
+               </div>
+
+               <!-- API REST -->
+               <div class="text-center">
+                  <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                     <span class="text-2xl font-bold text-white">API</span>
+                  </div>
+                  <h3 class="text-lg font-bold text-white mb-2">API REST</h3>
+                  <p class="text-gray-300">Intégration Pokémon TCG API</p>
+               </div>
+            </div>
+         </div>
+      </div>
+   </section>
+
+
+   <!-- Footer -->
+   <footer class="bg-black bg-opacity-80 backdrop-blur-sm py-8">
+      <div class="container mx-auto px-6">
+         <div class="text-center">
+            <img src="img/logo.png" alt="Logo" class="h-12 mx-auto mb-4 opacity-80" />
+            <p class="text-gray-400 mb-2">
+               Projet éducatif - Pokémon TCG Web
+            </p>
+            <p class="text-gray-500 text-sm">
+               © 2025 - Développé avec ❤️ pour l'apprentissage du développement web
+            </p>
+         </div>
+      </div>
+   </footer>
 
 </body>
 

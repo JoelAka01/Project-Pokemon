@@ -1,6 +1,6 @@
 export class Player {
    constructor(deckArray, maxHandSize) {
-      this.deck = [...deckArray];      // Créer une Hand simple pour contenir les cartes (pas de rendu)
+      this.deck = [...deckArray];
       this.hand = {
          cards: [],
          maxSize: maxHandSize,
@@ -28,7 +28,6 @@ export class Player {
          if (success) {
             return card;
          } else {
-            // Remettre la carte dans le deck si la main est pleine
             this.deck.unshift(card);
          }
       }
@@ -38,7 +37,6 @@ export class Player {
    playCard(cardIndex) {
       if (cardIndex >= 0 && cardIndex < this.hand.cards.length) {
          const card = this.hand.cards.splice(cardIndex, 1)[0];
-         // On peut faire d'autres traitements ici selon le type de carte
          return card;
       }
       return null;
@@ -46,5 +44,6 @@ export class Player {
 
    discardCard(card) {
       this.discardPile.push(card);
+      return this.discardPile.length;
    }
 }

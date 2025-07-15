@@ -1,5 +1,4 @@
-export class Deck 
-{
+export class Deck {
    constructor(container, cards = [], dragHandler = null) {
       this.container = container;
       this.cards = cards;
@@ -33,6 +32,15 @@ export class Deck
    }
 
    render() {
+      console.log("🃏 === RENDU DECK ===");
+      console.log(`📦 Nombre de cartes: ${this.cards.length}`);
+      console.log(`📦 Container:`, this.container);
+
+      if (!Array.isArray(this.cards)) {
+         console.error("❌ this.cards n'est pas un tableau");
+         return;
+      }
+
       this.clear();
 
       this.container.innerHTML = `
@@ -54,6 +62,7 @@ export class Deck
             deckCard.addEventListener('dragstart', this.dragHandler);
          }
       }
+      console.log(`✅ Rendu deck terminé: ${this.container.children.length} éléments`);
    }
 
    get length() {
@@ -69,14 +78,18 @@ export class Deck
    }
 
    setCards(newCards) {
-      this.cards = [...newCards];
+      this.cards.length = 0;
+      this.cards.push(...newCards);
+      this.render();
    }
 
    addCards(cards) {
       this.cards.push(...cards);
+      this.render();
    }
 
    empty() {
-      this.cards = [];
+      this.cards.length = 0;
+      this.render();
    }
 }

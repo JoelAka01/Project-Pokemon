@@ -1,4 +1,65 @@
 export const pokemons = [
+   // --- Pokémons exclusifs à la pioche ---
+   {
+      id: "201",
+      name: "Pokepioche1",
+      imageUrl: "https://images.pokemontcg.io/base1/1_hires.png",
+      hp: 30,
+      types: ["Colorless"],
+      attacks: [
+         {
+            name: "Pioche Rapide",
+            cost: ["Colorless"],
+            damage: "0"
+         }
+      ],
+      weaknesses: [
+         {
+            type: "Fighting",
+            value: "×2"
+         }
+      ]
+   },
+   {
+      id: "202",
+      name: "Pokepioche2",
+      imageUrl: "https://images.pokemontcg.io/base1/2_hires.png",
+      hp: 20,
+      types: ["Colorless"],
+      attacks: [
+         {
+            name: "Pioche Chanceuse",
+            cost: ["Colorless"],
+            damage: "0"
+         }
+      ],
+      weaknesses: [
+         {
+            type: "Fighting",
+            value: "×2"
+         }
+      ]
+   },
+   {
+      id: "203",
+      name: "Pokepioche3",
+      imageUrl: "https://images.pokemontcg.io/base1/3_hires.png",
+      hp: 10,
+      types: ["Colorless"],
+      attacks: [
+         {
+            name: "Pioche Surprise",
+            cost: ["Colorless"],
+            damage: "0"
+         }
+      ],
+      weaknesses: [
+         {
+            type: "Fighting",
+            value: "×2"
+         }
+      ]
+   },
    {
       id: "001",
       name: "Bulbasaur",
@@ -200,3 +261,8 @@ export const pokemons = [
       ]
    }
 ];
+
+// Nouvelle fonction utilitaire pour récupérer les pokémons spéciaux de la pioche
+export function getSpecialPiocheCards() {
+   return pokemons.filter(p => p.id === "201" || p.id === "202" || p.id === "203");
+}

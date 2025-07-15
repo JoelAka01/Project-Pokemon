@@ -1,4 +1,3 @@
-// (Suppression de l'accolade fermante superflue)
 import { AttackModal } from './modals/AttackModal.js';
 import { GameModal } from './modals/GameModal.js';
 import { NotificationModal } from './modals/NotificationModal.js';
@@ -680,17 +679,21 @@ export class BattleSystem {
 
       // Si le joueur est KO, il doit quand même finir d'attaquer
       if (this.playerHP <= 0) {
-         // ✅ Vérifier si double KO
+         // ✅ Vérifier double KO
          if (this.opponentHP <= 0) {
             await this.handleDoubleKO();
             return;
          }
 
-         // Sinon, KO joueur seul
-         if (this.game.player.activeCard && this.game.opponent.activeCard && !this._playerAutoAttackInProgress) {
-            await this.playerAutoAttack();
+         // ✅ Si opponentAttacksFirst : riposte autorisée avant KO
+         if (this.opponentAttacksFirst && this.game.player.activeCard) {
+            await this.playerAutoAttack(true); // riposte post-KO
+            await this.handleKOs();
+            this.opponentAttacksFirst = false;
+            return;
          }
 
+         // ❌ Sinon, KO joueur direct
          if (this.game.player.activeCard) {
             this.game.player.discardPile.push(this.game.player.activeCard);
             this.game.player.activeCard = null;
@@ -710,20 +713,6 @@ export class BattleSystem {
          if (this.game.save) this.game.save();
          this.showPlayerReplacementNotification();
       }
-      else {
-         // Le joueur survit, c'est maintenant à son tour d'attaquer
-
-         // Réinitialiser les attaques pour le prochain tour
-         this.resetAttacks();
-
-         // Ouvrir la modal d'attaque du joueur pour le tour suivant UNIQUEMENT si aucune attaque n'est sélectionnée
-         // if (this.game.player.activeCard && this.game.opponent.activeCard && !this.selectedPlayerAttack) {
-         //    setTimeout(() => {
-         //       this.showAttackModal(this.game.player.activeCard, true);
-         //    }, 500);
-         // }
-      }
-
       // Sauvegarder l'état
       if (this.game.save) this.game.save();
    }

@@ -19,7 +19,7 @@ export class Card {
    }
 
    static async fetchCards({ type = "Fire", pageSize = 10 } = {}) {
-      // Filtrer les Pokémon par type (insensible à la casse)
+
       const filtered = pokemons.filter(pokemon =>
          !type || (
             pokemon.types &&
@@ -27,10 +27,8 @@ export class Card {
          )
       );
 
-      // Limiter le nombre de résultats (si pageSize précisé)
       const sliced = filtered.slice(0, pageSize);
 
-      // Retourner des instances de Card
       return sliced.map(card =>
          new Card(
             card.id,
