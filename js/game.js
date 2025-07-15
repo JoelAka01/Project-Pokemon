@@ -445,16 +445,16 @@ export class Game {
    saveGameState() {
       const gameData = {
          player: {
-            deck: [...this.player.deck],
-            hand: [...this.player.hand.cards],
-            activeCard: this.player.activeCard,
-            discardPile: [...this.player.discardPile]
+            deck: Array.isArray(this.player.deck) ? [...this.player.deck] : [],
+            hand: Array.isArray(this.player.hand?.cards) ? [...this.player.hand.cards] : [],
+            activeCard: this.player.activeCard || null,
+            discardPile: Array.isArray(this.player.discardPile) ? [...this.player.discardPile] : []
          },
          opponent: {
-            deck: [...this.opponent.deck],
-            hand: [...this.opponent.hand.cards],
-            activeCard: this.opponent.activeCard,
-            discardPile: [...this.opponent.discardPile]
+            deck: Array.isArray(this.opponent.deck) ? [...this.opponent.deck] : [],
+            hand: Array.isArray(this.opponent.hand?.cards) ? [...this.opponent.hand.cards] : [],
+            activeCard: this.opponent.activeCard || null,
+            discardPile: Array.isArray(this.opponent.discardPile) ? [...this.opponent.discardPile] : []
          },
          battleSystem: this.battleSystem,
          canDraw: this.canDraw,
@@ -462,6 +462,7 @@ export class Game {
          timerState: this.timer.getState()
       };
 
+      console.log('[DEBUG SAVE] gameData envoyé au localStorage:', gameData);
       this.storageManager.saveGameState(gameData);
    }
 
@@ -505,6 +506,16 @@ export class Game {
       this.opponent.discardPile = Array.isArray(gameState.opponent.discardPile) ? gameState.opponent.discardPile : [];
       // Synchroniser la référence du composant Deck adversaire
       if (this.opponentDeck) this.opponentDeck.cards = this.opponent.deck;
+
+      // Forcer le rendu des mains après restauration pour éviter tout bug d'affichage
+      if (this.playerHand) {
+         this.playerHand.cards = this.player.hand.cards;
+         this.playerHand.render();
+      }
+      if (this.opponentHand) {
+         this.opponentHand.cards = this.opponent.hand.cards;
+         this.opponentHand.render();
+      }
 
       // Restaurer l'état du système de bataille
       if (gameState.battleSystem && this.battleSystem) {

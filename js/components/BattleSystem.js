@@ -153,8 +153,8 @@ export class BattleSystem {
          const attackDisplay = document.getElementById('battle-attack-display');
          if (attackDisplay) attackDisplay.remove();
 
-         // Afficher la modal "changer de Pokémon" uniquement si le joueur a encore des HP
-         if (this.playerHP > 0) {
+         // Afficher la modal "changer de Pokémon" uniquement si le joueur a encore des HP ET que la partie n'est pas terminée
+         if (this.playerHP > 0 && !this.checkWin()) {
             this.showChangeModal();
             if (this.game.save) this.game.save();
          }

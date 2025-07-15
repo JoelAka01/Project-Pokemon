@@ -112,7 +112,7 @@ export class NotificationModal {
         notification.innerHTML = `
             <div class="flex items-center space-x-2">
                 <span>💀💀</span>
-                <span>Double KO ! L'adversaire place sa carte et attaque en premier...</span>
+                <span>Double KO ! Placer une nouvelle carte</span>
             </div>
         `;
 

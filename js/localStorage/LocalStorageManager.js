@@ -21,13 +21,13 @@ export class LocalStorageManager {
          const gameState = {
             player: {
                deck: gameData.player.deck,
-               hand: gameData.player.hand.cards,
+               hand: gameData.player.hand,
                activeCard: gameData.player.activeCard,
                discardPile: gameData.player.discardPile
             },
             opponent: {
                deck: gameData.opponent.deck,
-               hand: gameData.opponent.hand.cards,
+               hand: gameData.opponent.hand,
                activeCard: gameData.opponent.activeCard,
                discardPile: gameData.opponent.discardPile
             },
