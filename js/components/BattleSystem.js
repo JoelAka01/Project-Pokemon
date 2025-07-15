@@ -19,6 +19,9 @@ export class BattleSystem {
 
       this.playerCardHP = {};
       this.opponentCardHP = {};
+
+      // Flag pour bloquer les interactions pendant la résolution des KO
+      this.isResolvingKO = false;
    }
 
    showAttackModal(card, isPlayer = true) {
@@ -816,20 +819,19 @@ export class BattleSystem {
    }
 
    async handleDoubleKO() {
+      // Bloquer les interactions pendant la résolution du double KO
+      this.isResolvingKO = true;
+
       // Retirer les deux cartes actives (joueur et adversaire) et mettre à jour l'UI
-      // Toujours retirer la carte du joueur si présente
       if (this.game.player.activeCard) {
          this.game.player.discardCard(this.game.player.activeCard);
          this.game.player.activeCard = null;
       }
-      // Toujours retirer la carte adverse si présente
       if (this.game.opponent.activeCard) {
          this.game.opponent.discardCard(this.game.opponent.activeCard);
          this.game.opponent.activeCard = null;
       }
-      // Si la carte adverse n'est plus dans activeCard mais reste dans la zone active, forcer le retrait visuel et logique
       if (this.game.opponentActiveZone && this.game.opponentActiveZone.activeCard) {
-         // On retire la carte de la zone active adverse et on la met dans la défausse si ce n'est pas déjà fait
          const card = this.game.opponentActiveZone.activeCard;
          if (!this.game.opponent.discardPile.includes(card)) {
             this.game.opponent.discardCard(card);
@@ -851,8 +853,12 @@ export class BattleSystem {
       this.refreshUI();
       if (this.game.save) this.game.save();
       const gameEndedDouble = this.checkWin();
-      if (gameEndedDouble) return;
+      if (gameEndedDouble) {
+         this.isResolvingKO = false;
+         return;
+      }
       this.showPlayerReplacementNotification();
+      this.isResolvingKO = false;
    }
 
    showPlayerReplacementNotification() {

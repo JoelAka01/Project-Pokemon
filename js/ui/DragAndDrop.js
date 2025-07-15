@@ -225,6 +225,11 @@ export class DragAndDropManager {
     * @param {Object} card - La carte à déplacer
     */
    handleDropToPlayerActive(index, card) {
+      // Empêcher la pose si la résolution d'un KO est en cours
+      if (this.game.battleSystem && this.game.battleSystem.isResolvingKO) {
+         this.showAlert("Patiente, la résolution du combat est en cours !");
+         return;
+      }
       if (!this.game.player.activeCard) {
          console.log("Déplacement de la carte vers la zone active");
 
