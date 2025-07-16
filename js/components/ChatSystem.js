@@ -6,72 +6,48 @@
 export default class ChatSystem {
     constructor(battleSystem) {
         this.battleSystem = battleSystem;
-        
-        // Éléments DOM du chat standard
         this.messageContainer = document.getElementById('chat-messages');
         this.chatInput = document.getElementById('chat-input');
         this.chatSendButton = document.getElementById('chat-send');
-        
-        // Éléments DOM de la modale de chat
-        this.chatButton = document.getElementById('chat-button');
         this.chatModal = document.getElementById('chat-modal');
-        this.closeModalButton = document.getElementById('close-chat-modal');
-        this.modalMessageContainer = document.getElementById('chat-modal-messages');
-        this.modalChatInput = document.getElementById('chat-modal-input');
-        this.modalSendButton = document.getElementById('chat-modal-send');
-        this.unreadMessageCount = document.getElementById('unread-message-count');
+        this.chatButton = document.getElementById('chat-button');
+        this.closeChatButton = document.getElementById('close-chat-modal');
         
         this.setupEventListeners();
         this.messageHistory = [];
         this.maxMessages = 50; // Limite le nombre de messages gardés en mémoire
         this.unreadMessages = 0;
-        this.isModalOpen = false;
     }
 
     /**
      * Initialise les écouteurs d'événements pour le chat
      */
     setupEventListeners() {
-        // Événements pour le chat standard
-        this.chatSendButton?.addEventListener('click', () => {
-            this.sendPlayerMessage(this.chatInput);
+        // Événement pour envoyer un message avec le bouton
+        this.chatSendButton.addEventListener('click', () => {
+            this.sendPlayerMessage();
         });
 
-        this.chatInput?.addEventListener('keypress', (event) => {
+        // Événement pour envoyer un message avec la touche Entrée
+        this.chatInput.addEventListener('keypress', (event) => {
             if (event.key === 'Enter') {
-                this.sendPlayerMessage(this.chatInput);
+                this.sendPlayerMessage();
             }
         });
 
-        // Événements pour la modale de chat
-        this.chatButton?.addEventListener('click', () => {
+        // Événement pour ouvrir la modale de chat
+        this.chatButton.addEventListener('click', () => {
             this.openChatModal();
         });
 
-        this.closeModalButton?.addEventListener('click', () => {
+        // Événement pour fermer la modale de chat
+        this.closeChatButton.addEventListener('click', () => {
             this.closeChatModal();
         });
 
-        this.modalSendButton?.addEventListener('click', () => {
-            this.sendPlayerMessage(this.modalChatInput);
-        });
-
-        this.modalChatInput?.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter') {
-                this.sendPlayerMessage(this.modalChatInput);
-            }
-        });
-
-        // Fermer la modale si on clique en dehors
-        this.chatModal?.addEventListener('click', (event) => {
-            if (event.target === this.chatModal) {
-                this.closeChatModal();
-            }
-        });
-
-        // Gestion des touches du clavier (échap pour fermer)
+        // Fermeture de la modale avec la touche Echap
         document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && this.isModalOpen) {
+            if (event.key === 'Escape' && !this.chatModal.classList.contains('hidden')) {
                 this.closeChatModal();
             }
         });
@@ -81,84 +57,60 @@ export default class ChatSystem {
      * Ouvre la modale de chat
      */
     openChatModal() {
-        if (this.chatModal) {
-            this.chatModal.classList.remove('hidden');
-            this.isModalOpen = true;
-            this.resetUnreadCounter();
-            
-            // Mettre le focus sur le champ de saisie
-            setTimeout(() => {
-                this.modalChatInput?.focus();
-            }, 100);
-            
-            // Scroll vers le bas pour voir les derniers messages
-            this.scrollToBottom(this.modalMessageContainer);
-        }
+        this.chatModal.classList.remove('hidden');
+        this.chatInput.focus();
+        
+        // Réinitialise le compteur de messages non lus
+        this.unreadMessages = 0;
+        this.updateUnreadIndicator();
+        
+        // Scroll vers le bas pour voir les derniers messages
+        this.messageContainer.scrollTop = this.messageContainer.scrollHeight;
     }
 
     /**
      * Ferme la modale de chat
      */
     closeChatModal() {
-        if (this.chatModal) {
-            this.chatModal.classList.add('hidden');
-            this.isModalOpen = false;
-        }
+        this.chatModal.classList.add('hidden');
     }
 
     /**
-     * Réinitialise le compteur de messages non lus
+     * Met à jour l'indicateur de messages non lus
      */
-    resetUnreadCounter() {
-        this.unreadMessages = 0;
-        if (this.unreadMessageCount) {
-            this.unreadMessageCount.classList.add('hidden');
+    updateUnreadIndicator() {
+        // Supprime l'ancien indicateur s'il existe
+        const existingIndicator = this.chatButton.querySelector('.new-message-indicator');
+        if (existingIndicator) {
+            existingIndicator.remove();
         }
-    }
 
-    /**
-     * Met à jour le compteur de messages non lus
-     */
-    updateUnreadCounter() {
-        if (!this.isModalOpen) {
-            this.unreadMessages++;
-            
-            if (this.unreadMessageCount) {
-                this.unreadMessageCount.textContent = `${this.unreadMessages} ${this.unreadMessages > 1 ? 'nouveaux messages' : 'nouveau message'}`;
-                this.unreadMessageCount.classList.remove('hidden');
-            }
-            
-            // Animation du bouton de chat pour attirer l'attention
-            if (this.chatButton) {
-                this.chatButton.classList.add('animate-pulse');
-                setTimeout(() => {
-                    this.chatButton.classList.remove('animate-pulse');
-                }, 1000);
-            }
+        // Enlève la classe de clignotement
+        this.chatButton.classList.remove('blinking');
+        
+        // Si pas de messages non lus, on s'arrête là
+        if (this.unreadMessages === 0) {
+            return;
         }
-    }
-
-    /**
-     * Fait défiler la zone de messages vers le bas
-     * @param {HTMLElement} container - Le conteneur de messages à faire défiler
-     */
-    scrollToBottom(container) {
-        if (container) {
-            container.scrollTop = container.scrollHeight;
-        }
+        
+        // Sinon on crée l'indicateur et on ajoute la classe de clignotement
+        const indicator = document.createElement('span');
+        indicator.classList.add('new-message-indicator');
+        indicator.textContent = this.unreadMessages > 9 ? '9+' : this.unreadMessages;
+        this.chatButton.appendChild(indicator);
+        
+        // Ajoute la classe de clignotement au bouton
+        this.chatButton.classList.add('blinking');
     }
 
     /**
      * Envoie un message du joueur et le traite
-     * @param {HTMLInputElement} inputElement - L'élément input contenant le message
      */
-    sendPlayerMessage(inputElement) {
-        if (!inputElement) return;
-        
-        const message = inputElement.value.trim();
+    sendPlayerMessage() {
+        const message = this.chatInput.value.trim();
         if (message) {
             this.addMessage('player', message);
-            inputElement.value = '';
+            this.chatInput.value = '';
             
             // Simulation de réponse de l'adversaire
             if (Math.random() < 0.3) { // 30% de chance d'avoir une réponse
@@ -240,75 +192,45 @@ export default class ChatSystem {
      */
     addMessage(type, text) {
         // Crée l'élément de message
-        const messageData = { type, text, timestamp: new Date() };
-        
-        // Ajoute le message à l'historique et limite la taille
-        this.messageHistory.push(messageData);
-        if (this.messageHistory.length > this.maxMessages) {
-            this.messageHistory.shift();
-        }
-
-        // Affiche le message dans les deux conteneurs (principal et modal)
-        this.displayMessageInContainer(this.messageContainer, messageData);
-        this.displayMessageInContainer(this.modalMessageContainer, messageData);
-        
-        // Met à jour le compteur de messages non lus
-        this.updateUnreadCounter();
-    }
-
-    /**
-     * Affiche un message dans un conteneur spécifique
-     * @param {HTMLElement} container - Le conteneur où afficher le message
-     * @param {Object} messageData - Les données du message
-     */
-    displayMessageInContainer(container, messageData) {
-        if (!container) return;
-
-        const { type, text, timestamp } = messageData;
-        
-        // Crée l'élément de message
         const messageElement = document.createElement('div');
-        messageElement.classList.add('message', type, 'mb-2', 'animate-fadeIn');
+        messageElement.classList.add('message', type, 'mb-1');
         
         // Ajoute un préfixe selon le type de message
         let prefix = '';
         if (type === 'player') {
             prefix = '<span class="text-green-300 font-bold">Toi:</span> ';
-            messageElement.classList.add('text-right', 'pr-2');
         } else if (type === 'opponent') {
             prefix = '<span class="text-red-300 font-bold">Adversaire:</span> ';
-            messageElement.classList.add('text-left', 'pl-2');
         } else if (type === 'system') {
-            messageElement.classList.add('italic', 'text-yellow-200', 'text-center');
+            messageElement.classList.add('italic', 'text-yellow-200');
         }
         
-        // Formate l'heure
-        const timeString = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
-        // Construit le contenu du message
-        messageElement.innerHTML = `
-            ${prefix}${text}
-            <div class="text-xs text-gray-400 mt-1">${timeString}</div>
-        `;
+        messageElement.innerHTML = prefix + text;
         
         // Ajoute le message au conteneur
-        container.appendChild(messageElement);
+        this.messageContainer.appendChild(messageElement);
+        
+        // Ajoute le message à l'historique et limite la taille
+        this.messageHistory.push({ type, text });
+        if (this.messageHistory.length > this.maxMessages) {
+            this.messageHistory.shift();
+        }
         
         // Scroll automatique vers le bas
-        this.scrollToBottom(container);
+        this.messageContainer.scrollTop = this.messageContainer.scrollHeight;
+
+        // Si la modale est fermée, on incrémente le compteur de messages non lus
+        if (this.chatModal.classList.contains('hidden') && type !== 'player') {
+            this.unreadMessages++;
+            this.updateUnreadIndicator();
+        }
     }
 
     /**
      * Efface tous les messages du chat
      */
     clearMessages() {
-        if (this.messageContainer) {
-            this.messageContainer.innerHTML = '';
-        }
-        if (this.modalMessageContainer) {
-            this.modalMessageContainer.innerHTML = '';
-        }
+        this.messageContainer.innerHTML = '';
         this.messageHistory = [];
-        this.resetUnreadCounter();
     }
 }

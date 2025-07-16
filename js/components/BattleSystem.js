@@ -104,6 +104,11 @@ export class BattleSystem {
 
       this.isInBattle = true;
 
+      // Ajouter un message dans le chat pour annoncer le début du combat
+      if (this.game.chatSystem) {
+         this.game.chatSystem.addMessage('system', `⚔️ Le combat commence entre ${playerCard.name} et ${opponentCard.name} !`);
+      }
+
       if (this.game.save) this.game.save();
 
       try {
@@ -212,6 +217,8 @@ export class BattleSystem {
          maxDefenderHP: this.maxOpponentHP
       });
 
+      this.performAttack(playerCard, opponentCard, playerAttack, true);
+
       await this.delay(2000);
    }
 
@@ -240,6 +247,8 @@ export class BattleSystem {
          defenderHP: this.playerHP,
          maxDefenderHP: this.maxPlayerHP
       });
+
+      this.performAttack(opponentCard, playerCard, opponentAttack, false);
 
       await this.delay(2000);
    }
@@ -678,6 +687,8 @@ export class BattleSystem {
          maxDefenderHP: this.maxPlayerHP
       });
 
+      this.performAttack(opponentCard, this.game.player.activeCard, selectedAttack, false);
+
       await this.delay(3000);
 
       // Si le joueur est KO, il doit quand même finir d'attaquer
@@ -960,6 +971,24 @@ export class BattleSystem {
                }, 3000);
             }, 1000);
          }
+      }
+   }
+
+   performAttack(attackerCard, defenderCard, attack, isPlayerAttacking) {
+      if (!attackerCard || !defenderCard || !attack) {
+         console.error("Erreur: données d'attaque manquantes", {
+            attackerCard, defenderCard, attack, isPlayerAttacking
+         });
+         return;
+      }
+
+      // Ajouter un message dans le chat
+      if (this.game.chatSystem) {
+         this.game.chatSystem.addGameMessage('attack', {
+            attacker: isPlayerAttacking ? 'Ton ' + attackerCard.name : 'L\'adversaire ' + attackerCard.name,
+            attackName: attack.name,
+            damage: attack.damage
+         });
       }
    }
 }

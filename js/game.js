@@ -1,7 +1,7 @@
 import { Player } from './player.js';
 import { DragAndDropManager } from './ui/index.js';
 import { LocalStorageManager } from './localStorage/index.js';
-import { Hand, Deck, ActiveCardZone, Timer, CardModal, QuitModal, DiscardPile, BattleSystem } from './components/index.js';
+import { Hand, Deck, ActiveCardZone, Timer, CardModal, QuitModal, DiscardPile, BattleSystem, ChatSystem } from './components/index.js';
 
 export class Game {
    constructor(playerDeck, opponentDeck, maxHandSize = 5) {
@@ -89,6 +89,10 @@ export class Game {
       this.battleSystem = new BattleSystem(this);
       this.playerActiveZone = new ActiveCardZone(this.playerActive, this.cardModal, true); // Zone joueur
       this.opponentActiveZone = new ActiveCardZone(this.opponentActive, this.cardModal, false); // Zone adversaire
+      
+      // Système de messagerie
+      this.chatSystem = new ChatSystem(this.battleSystem);
+      this.opponentActiveZone = new ActiveCardZone(this.opponentActive, this.cardModal, false); // Zone adversaire
 
       // Timer
       const timerDisplay = document.getElementById("timer-display");
@@ -167,6 +171,11 @@ export class Game {
       // Exécuter le tirage
       this.canDraw = false;
       const cardFromDeck = this.player.deck.shift();
+
+      // Notifier le système de chat
+      if (this.chatSystem) {
+         this.chatSystem.addGameMessage('draw', { player: 'player' });
+      }
 
       // Recyclage de carte si la main n'est pas vide
       if (this.player.hand.cards.length > 0) {
