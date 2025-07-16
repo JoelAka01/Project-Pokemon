@@ -1,0 +1,146 @@
+/* Styles pour le système de messagerie */
+#chat-system {
+   transition: all 0.3s ease;
+}
+
+#chat-messages {
+   scrollbar-width: thin;
+   scrollbar-color: rgba(255, 204, 0, 0.6) rgba(0, 0, 0, 0.2);
+}
+
+#chat-messages::-webkit-scrollbar {
+   width: 8px;
+}
+
+#chat-messages::-webkit-scrollbar-track {
+   background: rgba(0, 0, 0, 0.2);
+   border-radius: 10px;
+}
+
+#chat-messages::-webkit-scrollbar-thumb {
+   background-color: rgba(255, 204, 0, 0.6);
+   border-radius: 10px;
+}
+
+.message {
+   padding: 4px 8px;
+   border-radius: 8px;
+   margin-bottom: 6px;
+   animation: fadeIn 0.3s ease-in-out;
+   line-height: 1.3;
+   word-break: break-word;
+}
+
+.message.system {
+   background-color: rgba(0, 0, 0, 0.2);
+}
+
+.message.player {
+   background-color: rgba(0, 128, 0, 0.2);
+   margin-left: 20px;
+}
+
+.message.opponent {
+   background-color: rgba(128, 0, 0, 0.2);
+   margin-right: 20px;
+}
+
+/* Animation pour l'apparition de la modale de chat */
+#chat-modal {
+   transition: opacity 0.3s ease-in-out;
+}
+
+#chat-modal-content {
+   transform-origin: center;
+   transition: transform 0.3s ease-in-out;
+}
+
+/* Animation pour le bouton de chat */
+#chat-button {
+   position: relative;
+}
+
+#chat-button.has-new-message::after {
+   content: '';
+   position: absolute;
+   top: -5px;
+   right: -5px;
+   width: 12px;
+   height: 12px;
+   background-color: #ff0000;
+   border-radius: 50%;
+   animation: pulse 1.5s infinite;
+}
+
+/* Indicateur de nouveaux messages */
+.new-message-indicator {
+   position: absolute;
+   top: -8px;
+   right: -8px;
+   width: 20px;
+   height: 20px;
+   background-color: #ff0000;
+   color: white;
+   font-size: 12px;
+   font-weight: bold;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   border-radius: 50%;
+   box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes fadeIn {
+   from {
+      opacity: 0;
+      transform: translateY(10px);
+   }
+   to {
+      opacity: 1;
+      transform: translateY(0);
+   }
+}
+
+/* Animation de notification pour nouveau message */
+@keyframes pulse {
+   0% {
+      box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7);
+   }
+   70% {
+      box-shadow: 0 0 0 10px rgba(255, 0, 0, 0);
+   }
+   100% {
+      box-shadow: 0 0 0 0 rgba(255, 0, 0, 0);
+   }
+}
+
+/* Animation pour le clignotement du bouton quand il y a un nouveau message */
+@keyframes blink {
+   0%, 100% {
+      opacity: 1;
+   }
+   50% {
+      opacity: 0.5;
+   }
+}
+
+#chat-button.blinking {
+   animation: blink 1s infinite;
+}
+
+/* Responsive design pour le chat */
+@media (max-width: 768px) {
+   #chat-modal-content {
+      max-width: 90%;
+      margin: 0 auto;
+   }
+   
+   #chat-messages {
+      height: 180px;
+   }
+   
+   .message {
+      font-size: 0.8rem;
+      padding: 2px 6px;
+   }
+}
