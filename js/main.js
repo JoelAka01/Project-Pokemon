@@ -1,8 +1,6 @@
 import { Game } from './game.js';
 import { Card } from './card.js';
-import { getSpecialPiocheCards } from './pokemons.js';
 
-// Fonction pour afficher/masquer l'overlay de chargement
 function toggleLoadingOverlay(show = true) {
    const loadingOverlay = document.getElementById('loading-overlay');
    if (loadingOverlay) {
@@ -22,59 +20,19 @@ function toggleLoadingOverlay(show = true) {
 }
 
 async function initGame() {
-   const types = ["fire", "water", "electric", "psychic", "grass"];
-   const cardsPerType = 2; 
-
    try {
       toggleLoadingOverlay(true);
-
-      console.log("Chargement des decks...");
-
-      const playerDeck = await fetchMixedDeck(types, cardsPerType);
-      const opponentDeck = await fetchMixedDeck(types, cardsPerType);
-
-      // Ajout des pokémons spéciaux de la pioche
-      const specialPiocheCards = getSpecialPiocheCards().map(p => new Card(p.id, p.name, p.imageUrl, p.hp, p.types, p.attacks, p.weaknesses));
-      playerDeck.push(...specialPiocheCards);
-      opponentDeck.push(...specialPiocheCards);
-
+      const allCards = await Card.fetchCards();
+      const playerDeck = shuffleArray([...allCards]);
+      const opponentDeck = shuffleArray([...allCards]);
       const game = new Game(playerDeck, opponentDeck);
-
-
       toggleLoadingOverlay(false);
-
       game.startGame();
-      console.log("Jeu initialisé !");
    } catch (error) {
       console.error("Erreur lors de l'initialisation du jeu:", error);
-      toggleLoadingOverlay(false); 
+      toggleLoadingOverlay(false);
       alert("Une erreur est survenue lors du chargement du jeu. Veuillez recharger la page.");
    }
-}
-
-async function fetchMixedDeck(types, cardsPerType) {
-   const allCards = [];
-   const loadingText = document.querySelector('#loading-overlay p');
-   const originalText = loadingText ? loadingText.textContent : '';
-
-
-   if (loadingText) {
-      loadingText.textContent = 'Chargement des cartes...';
-   }
-
-   for (let i = 0; i < types.length; i++) {
-      const type = types[i];
-      const cards = await Card.fetchCards({ type, subtype: "Basic", pageSize: cardsPerType });
-      allCards.push(...cards);
-      await new Promise(resolve => setTimeout(resolve, 300));
-   }
-
-   // Remettre le texte original
-   if (loadingText && originalText) {
-      loadingText.textContent = originalText;
-   }
-
-   return shuffleArray(allCards);
 }
 
 function shuffleArray(array) {

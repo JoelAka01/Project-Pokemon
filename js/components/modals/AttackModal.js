@@ -12,25 +12,55 @@ export class AttackModal {
 
       const modal = document.createElement('div');
       modal.id = 'attack-choice-modal';
-      modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+      modal.style.cssText = `
+      position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,0.65); display: flex; align-items: center; justify-content: center;
+      backdrop-filter: blur(4px); animation: fadeIn .3s;
+   `;
 
       modal.innerHTML = `
-         <div class="bg-white rounded-lg p-6 max-w-md mx-4">
-            <h3 class="text-lg font-bold mb-4">Choisir une attaque</h3>
-            <img src="${card.imageUrl}" alt="${card.name}" class="w-24 h-24 mx-auto mb-4 rounded">
-            <div class="space-y-2">
-               ${card.attacks.map((attack, index) => `
-                  <button class="attack-option w-full p-3 border rounded hover:bg-gray-100"
-                          data-attack-index="${index}">
-                     <div class="flex justify-between">
-                        <span>${attack.name}</span>
-                        <span class="font-bold text-red-600">${attack.damage || '0'}</span>
-                     </div>
-                  </button>
-               `).join('')}
-            </div>
+      <div style="
+         background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%);
+         border-radius: 22px; padding: 36px 28px 28px 28px; max-width: 400px; width: 96vw;
+         box-shadow: 0 8px 32px #2563eb33, 0 2px 8px #0002;
+         border: 2px solid #bae6fd; animation: popIn .4s cubic-bezier(.4,2,.6,1);
+         display: flex; flex-direction: column; align-items: center;
+      ">
+         <h3 style="font-size:1.3rem; font-weight:900; margin: 0 0 18px 0; color:#1e40af; letter-spacing:1px; text-shadow:0 2px 8px #60a5fa55; text-align: center;">
+            Choisir une attaque
+         </h3>
+         
+         <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
+            <img src="${card.imageUrl}" alt="${card.name}" style="
+               max-width: 200px; width: 100%; height: auto; border-radius: 12px; margin-bottom: 8px; 
+               box-shadow: 0 2px 12px #2563eb22; display: block;
+            ">
+            <span style="font-weight: 700; color: #1e40af; font-size: 1.1rem; text-align: center;">${card.name}</span>
          </div>
-      `;
+         
+         <div style="display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 320px;">
+            ${card.attacks.map((attack, index) => `
+               <button class="attack-option" data-attack-index="${index}"
+                  style="
+                     width: 100%; padding: 14px 18px; border: none; border-radius: 12px; font-size: 1.08rem; font-weight: 600;
+                     background: linear-gradient(90deg, #38bdf8 0%, #2563eb 100%); color: white; 
+                     box-shadow: 0 3px 15px #2563eb33;
+                     display: flex; align-items: center; justify-content: space-between; 
+                     transition: all 0.2s ease; cursor: pointer; letter-spacing: 0.5px;
+                     border: 2px solid transparent;
+                  "
+                  onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px #2563eb44'; this.style.borderColor='#60a5fa';" 
+                  onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 3px 15px #2563eb33'; this.style.borderColor='transparent';"
+               >
+                  <span style="text-align: left; flex: 1;">${attack.name}</span>
+                  <span style="font-weight: bold; color: #fbbf24; font-size: 1.15em; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">
+                     ${attack.damage ? `${attack.damage} ` : '0'}
+                  </span>
+               </button>
+            `).join('')}
+         </div>
+      </div>
+   `;
 
       return modal;
    }

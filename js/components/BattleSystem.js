@@ -596,57 +596,16 @@ export class BattleSystem {
       if (this.game.save) this.game.save();
 
       await this.delay(1000);
+
       if (!selectedCard.attacks || selectedCard.attacks.length === 0) return;
 
-      // L'adversaire attaque TOUJOURS en premier après remplacement
-      const randomAttackIndex = Math.floor(Math.random() * selectedCard.attacks.length);
-      const selectedAttack = selectedCard.attacks[randomAttackIndex];
-      this.selectedOpponentAttack = selectedAttack;
-      const damage = this.calcDamage(selectedAttack);
+      // ✅ Définir le flag pour indiquer que l'adversaire attaque en premier
+      this.opponentAttacksFirst = true;
 
-      if (this.playerHP === null && this.game.player.activeCard) {
-         this.playerHP = parseInt(this.game.player.activeCard.hp) || 100;
-         this.maxPlayerHP = this.playerHP;
-      }
-      this.playerHP = Math.max(0, this.playerHP - damage);
+      // ✅ Utiliser la méthode standard opponentAttack() qui gère tout
+      await this.opponentAttack();
 
-      this.showAttackDisplay({
-         attacker: selectedCard,
-         defender: this.game.player.activeCard,
-         attack: selectedAttack,
-         damage: damage,
-         isPlayer: false,
-         message: `${selectedCard.name} utilise ${selectedAttack.name} sur ${this.game.player.activeCard.name} !`,
-         defenderHP: this.playerHP,
-         maxDefenderHP: this.maxPlayerHP
-      });
-
-      await this.delay(3000);
-
-
-
-      // Après l'attaque adverse, le joueur doit attaquer automatiquement s'il a une carte active
-      if (this.game.player.activeCard) {
-         this.selectedPlayerAttack = null;
-         // Supprimer tout display/modal d'attaque du joueur avant d'attaquer automatiquement
-         const attackDisplay = document.getElementById('battle-attack-display');
-         if (attackDisplay) attackDisplay.remove();
-         const attackModal = document.getElementById('attack-choice-modal');
-         if (attackModal) attackModal.remove();
-         // Toujours forcer l'attaque du joueur, même à 0 HP, tant qu'il a une carte active
-         await this.playerAutoAttack(true); // true = riposte post-KO, donc attaque toujours
-
-         // Après l'attaque auto du joueur, gérer tous les KO (y compris double KO)
-         const playerKO = this.playerHP <= 0 && this.game.player.activeCard;
-         const opponentKO = this.opponentHP <= 0 && this.game.opponent.activeCard;
-         if (playerKO || opponentKO) {
-            await this.handleKOs();
-         }
-      } else {
-         await this.handleKOs();
-      }
-
-      if (this.game.save) this.game.save();
+      // Le flag opponentAttacksFirst sera réinitialisé dans opponentAttack()
    }
 
    async opponentAttack() {
@@ -659,7 +618,6 @@ export class BattleSystem {
          NotificationModal.showPlayerAttackSelectionNotification();
          return;
       }
-
 
       const randomAttackIndex = Math.floor(Math.random() * opponentCard.attacks.length);
       const selectedAttack = opponentCard.attacks[randomAttackIndex];
@@ -691,23 +649,33 @@ export class BattleSystem {
 
       await this.delay(3000);
 
-      // Si le joueur est KO, il doit quand même finir d'attaquer
-      if (this.playerHP <= 0) {
-         // ✅ Vérifier double KO
-         if (this.opponentHP <= 0) {
-            await this.handleDoubleKO();
-            return;
-         }
+      // ✅ NOUVELLE LOGIQUE : Gestion selon le contexte
 
-         // ✅ Si opponentAttacksFirst : riposte autorisée avant KO
-         if (this.opponentAttacksFirst && this.game.player.activeCard) {
-            await this.playerAutoAttack(true); // riposte post-KO
+      // Si c'est un double KO, le gérer directement
+      if (this.playerHP <= 0 && this.opponentHP <= 0) {
+         await this.handleDoubleKO();
+         return;
+      }
+
+      // Si l'adversaire attaque en premier (après un KO), le joueur doit riposter UNE fois
+      if (this.opponentAttacksFirst && this.game.player.activeCard) {
+         // Le joueur riposte UNE fois (même s'il est KO)
+         await this.playerAutoAttack(true); // true = riposte forcée
+
+         // Après la riposte, vérifier les KO ou afficher la modal
+         if (this.playerHP <= 0 || this.opponentHP <= 0) {
             await this.handleKOs();
-            this.opponentAttacksFirst = false;
-            return;
+         } else {
+            // Si les deux sont encore vivants, afficher la modal "changer de carte"
+            this.showChangeModal();
          }
 
-         // ❌ Sinon, KO joueur direct
+         this.opponentAttacksFirst = false;
+         return;
+      }
+
+      // Séquence normale : si le joueur est KO, le gérer
+      if (this.playerHP <= 0) {
          if (this.game.player.activeCard) {
             this.game.player.discardPile.push(this.game.player.activeCard);
             this.game.player.activeCard = null;
@@ -727,31 +695,25 @@ export class BattleSystem {
          if (this.game.save) this.game.save();
          this.showPlayerReplacementNotification();
       }
+
       // Sauvegarder l'état
       if (this.game.save) this.game.save();
    }
 
-   async playerAutoAttack() {
+   async playerAutoAttack(forceAttack = false) {
       if (this._playerAutoAttackInProgress) return;
       this._playerAutoAttackInProgress = true;
 
-      // On ajoute un paramètre pour forcer la riposte post-KO
-      let isRiposte = false;
-      if (arguments.length > 0 && arguments[0] === true) isRiposte = true;
-
-      // Si le joueur n'a pas de carte active, il ne doit pas attaquer
+      // Si le joueur n'a pas de carte active, il ne peut pas attaquer
       if (!this.game.player.activeCard) {
          this._playerAutoAttackInProgress = false;
          return;
       }
 
-      // Si le joueur a 0 HP, il doit attaquer si isRiposte est true (post-KO), sinon ne pas attaquer
-      if (this.playerHP !== null && this.playerHP <= 0) {
-         if (!isRiposte) {
-            this._playerAutoAttackInProgress = false;
-            return;
-         }
-         // Si isRiposte, on laisse passer pour attaquer même à 0 HP
+      // Si forceAttack = false et que le joueur est KO, ne pas attaquer
+      if (this.playerHP !== null && this.playerHP <= 0 && !forceAttack) {
+         this._playerAutoAttackInProgress = false;
+         return;
       }
 
       const playerCard = this.game.player.activeCard;
@@ -802,16 +764,8 @@ export class BattleSystem {
 
       await this.delay(3000);
 
-      // Nouveau bloc de vérification après attaque
-      if (this.playerHP <= 0 && this.opponentHP <= 0) {
-         await this.handleDoubleKO();
-      } else if (this.opponentHP <= 0 || this.playerHP <= 0) {
-         await this.handleKOs();
-      } else {
-         if (!isRiposte) {
-            this.showChangeModal();
-         }
-      }
+      // ✅ NE PAS gérer les KO ici - c'est la méthode appelante qui s'en charge
+      // Cela permet à opponentAttack() de décider quoi faire après l'attaque du joueur
 
       this._playerAutoAttackInProgress = false;
    }

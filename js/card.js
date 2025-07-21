@@ -1,6 +1,7 @@
 import { pokemons } from "./pokemons.js";
 
 export class Card {
+
    constructor(id, name, imageUrl, hp = 0, types = [], attacks = [], weaknesses = []) {
       this.id = id;
       this.name = name;
@@ -18,18 +19,8 @@ export class Card {
       }));
    }
 
-   static async fetchCards({ type = "Fire", pageSize = 10 } = {}) {
-
-      const filtered = pokemons.filter(pokemon =>
-         !type || (
-            pokemon.types &&
-            pokemon.types.some(t => t.toLowerCase() === type.toLowerCase())
-         )
-      );
-
-      const sliced = filtered.slice(0, pageSize);
-
-      return sliced.map(card =>
+   static async fetchCards() {
+      return pokemons.map(card =>
          new Card(
             card.id,
             card.name,
