@@ -75,11 +75,10 @@ export class Game {
       // Composants de cartes
       this.playerHand = new Hand(this.handContainer, true, this.cardModal, this.dragAndDrop);
       this.opponentHand = new Hand(this.opponentHandContainer, false, this.cardModal, this.dragAndDrop);
-      this.playerDeck = new Deck(this.deckContainer, this.player.deck, this.dragAndDrop.createDragStartHandler());
-      this.opponentDeck = new Deck(this.opponentDeckContainer, this.opponent.deck);
+      this.playerDeck = new Deck(this.deckContainer, this.player.deck, this.dragAndDrop.createDragStartHandler(), true);
+      this.opponentDeck = new Deck(this.opponentDeckContainer, this.opponent.deck, null, false);
 
-      console.log('🃏 Deck joueur à la création du Game :', this.playerDeck);
-      console.log('🃏 Deck adversaire à la création du Game :', this.opponentDeck);
+
 
       // Composants de défausse
       this.playerDiscard = new DiscardPile('player-discard', 'player', this.cardModal);
@@ -89,7 +88,7 @@ export class Game {
       this.battleSystem = new BattleSystem(this);
       this.playerActiveZone = new ActiveCardZone(this.playerActive, this.cardModal, true); // Zone joueur
       this.opponentActiveZone = new ActiveCardZone(this.opponentActive, this.cardModal, false); // Zone adversaire
-      
+
       // Système de messagerie
       this.chatSystem = new ChatSystem(this.battleSystem);
       this.opponentActiveZone = new ActiveCardZone(this.opponentActive, this.cardModal, false); // Zone adversaire

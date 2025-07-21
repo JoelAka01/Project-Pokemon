@@ -1,8 +1,9 @@
 export class Deck {
-   constructor(container, cards = [], dragHandler = null) {
+   constructor(container, cards = [], dragHandler = null, isPlayer = true) {
       this.container = container;
       this.cards = cards;
       this.dragHandler = dragHandler;
+      this.isPlayer = isPlayer;
    }
 
    addCard(card) {
@@ -43,23 +44,35 @@ export class Deck {
 
       this.clear();
 
+      // Afficher uniquement la carte du dessus (si présente)
+      let cardsHtml = '';
+      if (this.cards.length > 0) {
+         const card = this.cards[0];
+         const imgSrc = this.isPlayer ? card.imageUrl : 'img/back-card.jpg';
+         const alt = this.isPlayer ? card.name : 'Pioche';
+         // Appliquer la classe hover uniquement pour le joueur
+         const hoverClass = this.isPlayer ? 'hover:scale-105' : '';
+         cardsHtml = `
+            <div class="relative">
+               <img src="${imgSrc}"
+                  alt="${alt}"
+                  class="w-40 h-auto rounded-lg shadow-lg cursor-pointer transition-transform ${hoverClass} pokemon-card"
+                  data-card-idx="0"
+                  draggable="${this.isPlayer ? 'true' : 'false'}"
+               >
+            </div>
+         `;
+      }
       this.container.innerHTML = `
-         <div class="relative">
-            <img src="img/back-card.jpg" 
-               alt="Pioche" 
-               class="w-40 h-auto rounded-lg shadow-lg cursor-pointer transition-transform hover:scale-105 pokemon-card"
-               id="deck-card"
-               draggable="true"
-            >
-         </div>
+         <div class="relative flex flex-col items-center">${cardsHtml}</div>
          <p class="text-center text-white font-bold mt-2">${this.cards.length} carte${this.cards.length > 1 ? 's' : ''}</p>
       `;
 
-      // Ajouter le gestionnaire de drag si fourni
-      if (this.dragHandler) {
-         const deckCard = this.container.querySelector('#deck-card');
-         if (deckCard) {
-            deckCard.addEventListener('dragstart', this.dragHandler);
+      // Ajouter le gestionnaire de drag si fourni (sur la carte du dessus uniquement, et seulement pour le joueur)
+      if (this.dragHandler && this.cards.length > 0 && this.isPlayer) {
+         const topCardImg = this.container.querySelector('img[data-card-idx="0"]');
+         if (topCardImg) {
+            topCardImg.addEventListener('dragstart', this.dragHandler);
          }
       }
       console.log(`✅ Rendu deck terminé: ${this.container.children.length} éléments`);

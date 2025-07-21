@@ -1,5 +1,4 @@
 export const pokemons = [
-   // --- Pokémons exclusifs à la pioche ---
    {
       id: "201",
       name: "Pokepioche1",

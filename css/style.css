@@ -74,10 +74,7 @@
    }
 }
 
-/* Animation pour les cartes de la main adverse */
-#opponent-hand .pokemon-card:hover {
-   transform: translateY(-10px) scale(1.03) rotate(-2deg);
-}
+
 
 /* Animation pour les cartes actives */
 #player-active .pokemon-card:hover,
@@ -85,9 +82,8 @@
    transform: translateY(-5px) scale(1.1);
 }
 
-/* Animation pour la pioche */
-#deck-card:hover,
-#opponent-deck img:hover {
+/* Animation pour la pioche du joueur uniquement */
+#deck-card:hover {
    transform: translateY(-10px) rotate(3deg) scale(1.05);
 }
 
@@ -388,8 +384,7 @@
    transition: all 0.3s ease;
 }
 
-#hand .card-container:hover,
-#opponent-hand .card-container:hover {
+#hand .card-container:hover {
    transform: translateY(-10px) scale(1.05);
    z-index: 10;
 }
