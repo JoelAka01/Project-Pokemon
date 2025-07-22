@@ -84,9 +84,7 @@ export class BattleSystem {
                   setTimeout(() => {
                      // Si c'est une riposte après un KO adverse, ne pas continuer la bataille normale
                      if (this.isPostKOSequence) {
-                        this.isPostKOSequence = false;
-                        this.resetAttacks();
-                        this.showChangeModal();
+                        this.executePlayerCounterAttack();
                         return;
                      }
                      this.startBattle();
@@ -233,6 +231,46 @@ export class BattleSystem {
       this.performAttack(playerCard, opponentCard, playerAttack, true);
 
       await this.delay(2000);
+   }
+
+   async executePlayerCounterAttack() {
+      // Exécuter seulement l'attaque du joueur en riposte
+      const playerCard = this.game.player.activeCard;
+      const opponentCard = this.game.opponent.activeCard;
+      
+      if (!playerCard || !opponentCard || !this.selectedPlayerAttack) {
+         this.isPostKOSequence = false;
+         return;
+      }
+
+      const damage = this.calcDamage(this.selectedPlayerAttack);
+      this.opponentHP = Math.max(0, this.opponentHP - damage);
+
+      this.showAttackDisplay({
+         attacker: playerCard,
+         defender: opponentCard,
+         attack: this.selectedPlayerAttack,
+         damage: damage,
+         isPlayer: true,
+         message: `${playerCard.name} riposte avec ${this.selectedPlayerAttack.name} !`,
+         defenderHP: this.opponentHP,
+         maxDefenderHP: this.maxOpponentHP
+      });
+
+      this.performAttack(playerCard, opponentCard, this.selectedPlayerAttack, true);
+
+      await this.delay(3000);
+
+      // Gérer les KO après la riposte
+      await this.handleKOs();
+
+      // Marquer la fin de la séquence post-KO
+      this.isPostKOSequence = false;
+
+      // Afficher la modal "changer de Pokémon" si le joueur est encore vivant
+      if (this.playerHP > 0 && !this.checkWin()) {
+         this.showChangeModal();
+      }
    }
 
    showAttackDisplay({ attacker, defender, attack, damage, isPlayer, message, defenderHP, maxDefenderHP }) {
@@ -694,6 +732,9 @@ export class BattleSystem {
 
          if (this.game.save) this.game.save();
          this.showPlayerReplacementNotification();
+      } else if (this.isPostKOSequence) {
+         // Si c'est une attaque post-KO et que le joueur survit, il peut riposter
+         this.showAttackModal(this.game.player.activeCard, true);
       }
 
       // Sauvegarder l'état
