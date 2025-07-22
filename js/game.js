@@ -1,7 +1,7 @@
 
 import { Player } from './player.js';
-import { DragAndDropManager } from './ui/index.js';
-import { LocalStorageManager } from './localStorage/index.js';
+import { DragAndDropManager } from './dragAndDrop.js';
+import { LocalStorageManager } from './localStorage/LocalStorageManager.js';
 import { Hand, ActiveCardZone, Timer, CardModal, QuitModal, DiscardPile, BattleSystem, ChatSystem } from './components/index.js';
 import { DeckSelectionModal } from './components/modals/DeckSelectionModal.js';
 

@@ -1,11 +1,3 @@
-/**
- * Module de gestion du drag-and-drop pour le jeu Pokémon TCG
- * 
- * Ce module centralise toute la logique de glisser-déposer :
- * - Déplacement des cartes de la pioche vers la main
- * - Déplacement des cartes de la main vers les zones actives
- * - Gestion des événements et des animations
- */
 export class DragAndDropManager {
    constructor(game) {
       this.game = game;
