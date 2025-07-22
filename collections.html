@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+   <meta charset="UTF-8" />
+   <meta name="viewport" content="width=device-width, initial-scale=1" />
+   <script src="https://cdn.tailwindcss.com"></script>
+   <title>Pokémon TCG - Collections</title>
+   <link rel="stylesheet" href="css/style.css" />
+   <style>
+      /* Styles spécifiques pour les collections */
+      .collection-card {
+         transition: all 0.3s ease;
+         position: relative;
+         overflow: hidden;
+         background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+         backdrop-filter: blur(10px);
+         border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .collection-card:hover {
+         transform: translateY(-5px) scale(1.03);
+         box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+      }
+
+      .type-badge {
+         font-size: 0.75rem;
+         padding: 0.25rem 0.5rem;
+         border-radius: 9999px;
+         font-weight: bold;
+         text-transform: uppercase;
+         letter-spacing: 0.05em;
+      }
+
+      .type-fire { background: linear-gradient(135deg, #ff6b35, #f7931e); color: white; }
+      .type-water { background: linear-gradient(135deg, #4a90e2, #7bb3f0); color: white; }
+      .type-grass { background: linear-gradient(135deg, #7ac142, #a8d982); color: white; }
+      .type-electric { background: linear-gradient(135deg, #f7dc6f, #f4d03f); color: #333; }
+      .type-psychic { background: linear-gradient(135deg, #a569bd, #bb8fce); color: white; }
+      .type-fighting { background: linear-gradient(135deg, #e74c3c, #ec7063); color: white; }
+      .type-metal { background: linear-gradient(135deg, #85929e, #aab7b8); color: white; }
+      .type-ghost { background: linear-gradient(135deg, #6c5ce7, #a29bfe); color: white; }
+      .type-dragon { background: linear-gradient(135deg, #6c5ce7, #fd79a8); color: white; }
+      .type-colorless { background: linear-gradient(135deg, #95a5a6, #bdc3c7); color: white; }
+
+      .filter-btn {
+         transition: all 0.3s ease;
+      }
+
+      .filter-btn.active {
+         background: linear-gradient(135deg, #667eea, #764ba2);
+         color: white;
+         transform: scale(1.05);
+      }
+
+      .stats-grid {
+         display: grid;
+         grid-template-columns: 1fr 1fr;
+         gap: 0.5rem;
+      }
+
+      .card-grid {
+         display: grid;
+         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+         gap: 1rem;
+      }
+
+      @media (max-width: 768px) {
+         .card-grid {
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 0.75rem;
+         }
+      }
+   </style>
+</head>
+
+<body background="img/U02M2xPy-Fond-Decran-Pikachu-3.webp"
+   class="min-h-screen bg-cover bg-center font-sans text-gray-800">
+
+   <!-- Header -->
+   <header class="bg-black bg-opacity-50 backdrop-blur-sm">
+      <div class="container mx-auto px-6 py-4 flex items-center justify-between">
+         <div class="flex items-center">
+            <img src="img/logo.png" alt="Logo Pokémon Trading Card Game" class="h-16 object-contain drop-shadow-lg" />
+            <h1 class="ml-4 text-2xl font-bold text-white">Collections Pokémon</h1>
+         </div>
+         <nav class="flex items-center space-x-4">
+            <a href="landing.html" class="text-white hover:text-yellow-300 transition-colors">Accueil</a>
+            <a href="index.html" class="text-white hover:text-yellow-300 transition-colors">Jouer</a>
+            <a href="game.html" class="bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-2 px-4 rounded-full transition-colors">
+               Partie en cours
+            </a>
+         </nav>
+      </div>
+   </header>
+
+   <!-- Loading Overlay -->
+   <div id="loading-overlay"
+      class="fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm flex flex-col items-center justify-center z-50">
+      <div class="w-32 h-32 relative animate-bounce mb-8">
+         <img src="img/logo.png" alt="Chargement" class="w-full h-full object-contain drop-shadow-lg" />
+      </div>
+      <div class="flex flex-col items-center justify-center my-6">
+         <div class="pokemon-loader"></div>
+         <div class="h-6"></div>
+      </div>
+      <p class="text-white text-xl font-bold mt-4">Chargement de la collection...</p>
+      <p class="text-yellow-300 text-sm mt-2">Préparation des cartes Pokémon</p>
+   </div>
+
+   <!-- Main Content -->
+   <main class="container mx-auto px-6 py-8">
+      <!-- Title Section -->
+      <div class="text-center mb-8">
+         <h1 class="text-5xl md:text-6xl font-extrabold text-white drop-shadow-2xl mb-4">
+            Collection de cartes
+         </h1>
+         <p class="text-xl text-white drop-shadow-lg">
+            Découvrez toutes les cartes Pokémon disponibles dans le jeu
+         </p>
+      </div>
+
+      <!-- Statistics Section -->
+      <div id="stats-section" class="mb-8">
+         <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-xl p-6 shadow-xl border border-white border-opacity-30">
+            <h2 class="text-2xl font-bold text-white mb-4 text-center">Statistiques de la collection</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+               <div class="bg-blue-600 bg-opacity-80 rounded-lg p-4">
+                  <div class="text-3xl font-bold text-white" id="total-cards">0</div>
+                  <div class="text-sm text-blue-100">Total des cartes</div>
+               </div>
+               <div class="bg-green-600 bg-opacity-80 rounded-lg p-4">
+                  <div class="text-3xl font-bold text-white" id="total-types">0</div>
+                  <div class="text-sm text-green-100">Types différents</div>
+               </div>
+               <div class="bg-yellow-600 bg-opacity-80 rounded-lg p-4">
+                  <div class="text-3xl font-bold text-white" id="avg-hp">0</div>
+                  <div class="text-sm text-yellow-100">HP moyen</div>
+               </div>
+               <div class="bg-red-600 bg-opacity-80 rounded-lg p-4">
+                  <div class="text-3xl font-bold text-white" id="special-cards">0</div>
+                  <div class="text-sm text-red-100">Cartes spéciales</div>
+               </div>
+            </div>
+         </div>
+      </div>
+
+      <!-- Filters Section -->
+      <div class="mb-8">
+         <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-xl p-6 shadow-xl border border-white border-opacity-30">
+            <h2 class="text-xl font-bold text-white mb-4 text-center">Filtrer par type</h2>
+            <div class="flex flex-wrap justify-center gap-3" id="type-filters">
+               <button class="filter-btn active bg-white bg-opacity-20 text-white px-4 py-2 rounded-full" data-type="all">
+                  Tous
+               </button>
+               <!-- Les filtres de type seront ajoutés dynamiquement -->
+            </div>
+         </div>
+      </div>
+
+      <!-- Search Section -->
+      <div class="mb-8">
+         <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-xl p-4 shadow-xl border border-white border-opacity-30">
+            <div class="flex gap-4">
+               <input type="text" id="search-input" placeholder="Rechercher un Pokémon..." 
+                     class="flex-grow bg-white bg-opacity-80 backdrop-blur-sm rounded-lg px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-yellow-400">
+               <button id="search-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-all">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                  </svg>
+               </button>
+            </div>
+         </div>
+      </div>
+
+      <!-- Cards Grid -->
+      <div id="cards-container" class="card-grid">
+         <!-- Les cartes seront ajoutées dynamiquement ici -->
+      </div>
+
+      <!-- No Results Message -->
+      <div id="no-results" class="hidden text-center py-16">
+         <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-xl p-8 shadow-xl border border-white border-opacity-30 max-w-md mx-auto">
+            <div class="text-6xl mb-4">🔍</div>
+            <h3 class="text-2xl font-bold text-white mb-2">Aucun résultat</h3>
+            <p class="text-white opacity-80">Aucune carte ne correspond à votre recherche ou filtre.</p>
+         </div>
+      </div>
+   </main>
+
+   <!-- Card Modal (réutilisé du game.html) -->
+   <div id="card-modal"
+      class="hidden fixed inset-0 bg-black bg-opacity-80 backdrop-blur-md flex items-center justify-center z-50">
+      <div id="modal-content"
+         class="bg-gradient-to-br from-yellow-100 to-blue-100 p-6 rounded-xl max-w-4xl w-full mx-4 shadow-2xl border-4 border-yellow-400 transform transition-all duration-300 scale-95 opacity-90 hover:scale-100 hover:opacity-100">
+         <!-- En-tête avec nom du Pokémon et bouton fermer -->
+         <div class="flex justify-between items-center mb-4 bg-gradient-to-r from-blue-600 to-red-500 p-2 rounded-lg shadow-lg">
+            <h2 id="modal-title" class="text-2xl font-extrabold text-white drop-shadow-md px-4"></h2>
+            <button id="close-modal"
+               class="bg-white rounded-full p-1 text-gray-800 hover:text-red-600 hover:bg-gray-200 transition-all duration-200">
+               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+               </svg>
+            </button>
+         </div>
+
+         <!-- Contenu principal en flex -->
+         <div class="flex flex-col lg:flex-row gap-6">
+            <!-- Image de la carte avec effet spécial -->
+            <div class="relative group flex-shrink-0">
+               <div id="modal-card-halo"
+                  class="absolute -inset-1 bg-gradient-to-r from-yellow-400 to-blue-500 rounded-lg blur opacity-40 group-hover:opacity-100 transition duration-500 group-hover:duration-200">
+               </div>
+               <img id="modal-img"
+                  class="relative w-80 h-auto rounded-lg shadow-xl transform transition-all duration-500 hover:scale-105 z-10"
+                  src="" alt="Carte Pokémon">
+               <div id="modal-rarity"
+                  class="absolute bottom-2 right-2 bg-gradient-to-r from-purple-600 to-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold z-20 shadow-lg">
+                  Rare
+               </div>
+            </div>
+
+            <!-- Infos de la carte -->
+            <div class="flex-grow flex flex-col gap-4">
+               <!-- Stats principales -->
+               <div class="bg-white/70 p-4 rounded-xl shadow-lg border-2 border-gray-300">
+                  <div class="flex items-center gap-2 mb-3">
+                     <div id="pokemon-type-badges" class="flex gap-1"></div>
+                     <div class="ml-auto bg-gradient-to-r from-red-500 to-pink-600 text-white px-3 py-1 rounded-full font-bold">
+                        HP: <span id="modal-hp" class="text-yellow-300"></span>
+                     </div>
+                  </div>
+                  <div id="modal-description" class="italic text-gray-700 bg-gray-100/80 p-2 rounded-lg mb-2 text-center"></div>
+                  <div id="modal-info" class="grid gap-3"></div>
+               </div>
+
+               <!-- Section des attaques -->
+               <div id="modal-attacks-section" class="bg-gradient-to-r from-red-100 to-orange-100 p-4 rounded-xl shadow-lg border-2 border-red-300">
+                  <h3 class="text-xl font-bold text-red-800 flex items-center gap-2 mb-3">
+                     <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clip-rule="evenodd"></path>
+                     </svg>
+                     Attaques
+                  </h3>
+                  <div id="modal-attacks" class="space-y-3"></div>
+               </div>
+
+               <!-- Section faiblesses/résistances -->
+               <div class="grid grid-cols-2 gap-4">
+                  <div id="modal-weaknesses-section" class="bg-gradient-to-r from-red-100 to-red-200 p-3 rounded-xl shadow-lg border-2 border-red-400">
+                     <h3 class="text-lg font-bold text-red-800 mb-2 flex items-center gap-1">
+                        <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+                           <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                        Faiblesses
+                     </h3>
+                     <div id="modal-weaknesses" class="flex flex-wrap gap-2"></div>
+                  </div>
+                  <div id="modal-resistances-section" class="bg-gradient-to-r from-blue-100 to-blue-200 p-3 rounded-xl shadow-lg border-2 border-blue-400">
+                     <h3 class="text-lg font-bold text-blue-800 mb-2 flex items-center gap-1">
+                        <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+                           <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" />
+                        </svg>
+                        Résistances
+                     </h3>
+                     <div id="modal-resistances" class="flex flex-wrap gap-2"></div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+
+   <!-- Script JS -->
+   <script src="js/collections.js" type="module"></script>
+
+</body>
+
+</html>
