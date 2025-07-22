@@ -598,10 +598,7 @@ export class BattleSystem {
          return;
       }
 
-      // ✅ Définir le flag pour indiquer que l'adversaire attaque en premier
-      this.opponentAttacksFirst = true;
-
-      // ✅ Utiliser la méthode standard opponentAttack() qui gère tout
+      // L'adversaire attaque directement avec sa nouvelle carte
       await this.opponentAttack();
 
       // Marquer la fin de la séquence post-KO
@@ -665,8 +662,6 @@ export class BattleSystem {
 
       await this.delay(3000);
 
-      // ✅ NOUVELLE LOGIQUE : Gestion selon le contexte
-
       // Si c'est un double KO, le gérer directement
       if (this.playerHP <= 0 && this.opponentHP <= 0) {
          await this.handleDoubleKO();
@@ -674,30 +669,8 @@ export class BattleSystem {
          return;
       }
 
-      // Si l'adversaire attaque en premier (après un KO) et que le joueur est KO
-      if (this.opponentAttacksFirst && this.playerHP <= 0) {
-         // Le joueur va directement dans la défausse (pas de riposte)
-         await this.handleKOs();
-         this.opponentAttacksFirst = false;
-         this._opponentAttackInProgress = false;
-         this.isPostKOSequence = false;
-         return;
-      }
-
-      // Si l'adversaire attaque en premier et que le joueur est encore vivant
-      if (this.opponentAttacksFirst && this.game.player.activeCard && this.playerHP > 0) {
-         // Le joueur peut riposter normalement
-         this.showAttackModal(this.game.player.activeCard, true);
-         this.opponentAttacksFirst = false;
-         this._opponentAttackInProgress = false;
-         // La séquence post-KO se termine ici - PAS DE SUITE !
-         this.isPostKOSequence = false;
-         return;
-      }
-
       // Séquence normale : si le joueur est KO, le gérer directement
-      // MAIS seulement si ce n'était pas déjà une attaque post-KO
-      if (this.playerHP <= 0 && !this.isPostKOSequence) {
+      if (this.playerHP <= 0) {
          if (this.game.player.activeCard) {
             this.game.player.discardPile.push(this.game.player.activeCard);
             this.game.player.activeCard = null;
