@@ -14,7 +14,6 @@ export class BattleSystem {
       this.opponentHP = null;
       this.maxPlayerHP = null;
       this.maxOpponentHP = null;
-      this.opponentAttacksFirst = false;
       this.attackSelectionStarted = false;
 
       this.playerCardHP = {};
