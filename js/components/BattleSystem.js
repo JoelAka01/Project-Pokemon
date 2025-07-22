@@ -29,6 +29,34 @@ export class BattleSystem {
          return;
       }
 
+      // Si le Pokémon n'a qu'une seule attaque, l'utiliser automatiquement
+      if (card.attacks.length === 1) {
+         const selectedAttack = card.attacks[0];
+         
+         if (isPlayer) {
+            this.selectedPlayerAttack = selectedAttack;
+            
+            // Ajouter un message dans le chat pour indiquer l'attaque automatique
+            if (this.game.chatSystem) {
+               this.game.chatSystem.addMessage('system', `${card.name} utilise automatiquement ${selectedAttack.name} !`);
+            }
+
+            if (this.game.save) this.game.save();
+
+            if (this.selectedOpponentAttack) {
+               setTimeout(() => {
+                  this.startBattle();
+               }, 1000);
+            } else if (this.game.opponent.activeCard) {
+               this.selectOpponentAttack();
+            }
+         } else {
+            this.selectedOpponentAttack = selectedAttack;
+            if (this.game.save) this.game.save();
+         }
+         return;
+      }
+
       this.attackSelectionStarted = true;
       this.battlePhase = 'selecting-attacks';
 
@@ -775,6 +803,7 @@ export class BattleSystem {
 
       // Ouvre la modal de choix d'attaque dès qu'une carte active est posée côté joueur,
       // mais ne lance pas l'attaque automatiquement.
+      // Si le Pokémon n'a qu'une attaque, elle sera sélectionnée automatiquement
       if (playerCard && opponentCard && !this.selectedPlayerAttack && !this.isInBattle) {
          setTimeout(() => {
             this.showAttackModal(playerCard, true);
